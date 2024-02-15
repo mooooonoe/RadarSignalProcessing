@@ -1,8 +1,8 @@
 clear;
 clc;
 close all;
-load('twomen_CUBE.mat');
-load('twomen_RAW.mat');
+load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
+load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
 
 %parameters
 chirpsIdx=1;
@@ -318,50 +318,43 @@ cfarData_mti = squeeze(abs(rangeProfileData));
 th = zeros(size(cfarData_mti));
 no_tcell = 24;
 no_gcell = 8;
-factor = 6;
-beta = 0.1;
-objectNum = 2;
-
-filtered_input = mti_filter(cfarData_mti, beta);
 
 % 첫번째 sample index부터 마지막 index까지 test
 for cutIdx = 1:256
     % test할 cut를 data에서 선택
-    cut = filtered_input(cutIdx);
+    cut = cfarData_mti(cutIdx);
     for windowIdx = 1:window_sz 
         sum = 0;
         cnt = 0;
          % 우측 training cell의 sum 구하기
         for i= (no_tcell/2):-1:1
             if(cutIdx-i >0)
-                sum = sum + filtered_input(cutIdx-i);
+                sum = sum + cfarData_mti(cutIdx-i);
                 cnt = cnt+1;
             end
         end
         % 좌측 training cell의 sum 구하기
         for j=1:(no_tcell/2)
             if((cutIdx+no_gcell+j) <= 256)
-                sum = sum + filtered_input(cutIdx+no_gcell+j);
+                sum = sum + cfarData_mti(cutIdx+no_gcell+j);
                 cnt = cnt + 1;
             end
         end
         % 좌,우측 training cell의 평균
         mean = sum/cnt;
-        th(cutIdx) = (mean)*factor;
+        th(cutIdx) = (mean)*4;
     end
 end
-
 
 % Range FFT data plot
 figure('Position', [300,100, 1200, 800]);
 tiledlayout(2,2);
 nexttile;
-plot(rangeBin, filtered_input, 'LineWidth', 0.5);
+plot(rangeBin, cfarData_mti, 'LineWidth', 0.5);
 hold on;
 % Threshold plot
 plot(rangeBin, th, 'r', 'LineWidth', 0.5);
 legend('Range Profile', 'CFAR threshold');
-
 hold on;
 detected_points = find(cfarData_mti > th);
 % detected points plot
@@ -370,6 +363,8 @@ legend('Range Profile', 'CFAR Threshold', 'Detected Points');
 xlabel('Range');
 ylabel('power');
 title('CFAR Detection');
+
+
 
 %% 2D CFAR input
 sz_c = size(db_doppler,1);
