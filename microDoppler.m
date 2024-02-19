@@ -346,6 +346,8 @@ for cutIdx = 1:256
     end
 end
 
+
+
 % Range FFT data plot
 figure('Position', [300,100, 1200, 800]);
 tiledlayout(2,2);
@@ -470,7 +472,7 @@ axis xy
 %% Micro doppler
 % pre allocation
 frame_data = zeros(NChirp,NChan,Nframe);
-sampleIdx = 50;
+sampleIdx = 90;
 
 % 거리를 sampleIdx로 설정하고 3d data (slow time, channels, frames)로 생성
 for frames = 1:256
@@ -497,14 +499,3 @@ ylabel('Velocity (m/s)');
 title('Micro Doppler');
 colorbar;
 axis xy
-
-
-%% filter function
-function filtered_input = mti_filter(rangeprofile, beta)
-    len = length(rangeprofile);
-    filtered_input = zeros(size(rangeprofile));
-    for i = 2:len
-        filtered_input(i) = beta * filtered_input(i-1) + (1 - beta) * rangeprofile(i);
-    end
-end
-
