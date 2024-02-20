@@ -28,9 +28,29 @@ minPeakHeight = 10;
 [peaks, peak_locs] = findpeaks(abs(fft_result), 'MinPeakHeight', minPeakHeight);
 plot(rangeAxis(peak_locs), peaks, 'ro');
 
-hold off;
+%hold off;
 
 xlabel('Range');
 ylabel('Range FFT Output [dB]');
 title('Range Profile with Peaks Highlighted');
 legend('Range Profile', 'Peaks');
+
+
+minPeakDistance = 10; 
+
+[peaks, peak_locs] = findpeaks(abs(fft_result), 'MinPeakHeight', minPeakHeight, 'MinPeakDistance', minPeakDistance);
+peak_positions = rangeAxis(peak_locs);
+
+
+peak_distances = diff(peak_positions);
+
+% % 인접한 피크들을 출력
+% disp("인접한 피크 위치:");
+% disp(peak_positions);
+% disp("인접한 피크 사이의 거리:");
+% disp(peak_distances);
+
+hold on;
+plot(rangeAxis(peak_locs), peaks, 'go');
+
+hold off;
