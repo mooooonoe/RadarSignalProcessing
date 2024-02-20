@@ -3,6 +3,7 @@ close all;
 
 load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
 load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
+objectNum = 2;
 
 newCube.data = struct('data', cell(1, 128));
 
@@ -26,23 +27,35 @@ minPeakHeight = 10;
 [peaks, peak_locs] = findpeaks(abs(fft_result), 'MinPeakHeight', minPeakHeight);
 plot(rangeAxis(peak_locs), peaks, 'ro');
 
-Th_peak = 0.5;
+Th_peak = 0.08;
 
-for i = 1:length(peaks)-1
-    if peaks(i) > peaks(i+1)
-        lower = peaks(i+1);
-        higher = peaks(i);
-    else
-        lower = peaks(i);
-        higher = peaks(i+1);
+while true
+    peakCnt = 0;
+    
+    for i = 1:length(peaks)-1
+        if peaks(i) > peaks(i+1)
+            lower = peaks(i+1);
+            higher = peaks(i);
+            axis = peak_locs(i);
+        else
+            lower = peaks(i);
+            higher = peaks(i+1);
+            axis = peak_locs(i+1);
+        end
+    
+        ratio = abs(lower) / abs(higher);
+        if ratio < Th_peak
+            tgPeak = higher;
+            plot(rangeAxis(axis), tgPeak, 'go');
+            peakCnt = peakCnt+1;
+        end
+    end
+    
+    if peakCnt == objectNum
+        break;
     end
 
-    ratio = abs(lower) / abs(higher);
-    if ratio < Th_peak
-        tgPeak = higher;
-    end
-
-    plot(rangeAxis(peak_locs(i)), tgPeak, 'go');
+    Th_peak = Th_peak - 0.01;
 end
 
 hold off;
@@ -51,3 +64,6 @@ xlabel('Range');
 ylabel('Range FFT Output [dB]');
 title('Range Profile with Peaks Highlighted');
 legend('Range Profile', 'Peaks', 'target');
+
+
+stem(rangeAxis, tgPeak);
