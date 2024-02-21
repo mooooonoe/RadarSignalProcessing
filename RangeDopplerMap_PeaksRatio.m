@@ -1,14 +1,13 @@
 clear;
-clc;
+
 close all;
 load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
 load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
-objectNum = 2;
 
 %parameters
 chirpsIdx=1;
 chanIdx=1;
-frame_number=90;
+frame_number=128;
 
 numrangeBins=256;
 NChirp=128;
@@ -69,7 +68,18 @@ currChDataI = imag(rawFrameData(chirpsIdx,chanIdx,:));
 % t=linspace(0,NSample-1,NSample);
 t=linspace(0,sampling_time,NSample);
 
+figure('Position', [300,100, 1200, 800]);
+tiledlayout(2,2);
+nexttile;
+plot(t,currChDataI(:),t,currChDataQ(:))
+xlabel('time (seconds)');                  
+ylabel('ADC time domain output');        
+title('Time Domain Output');
+grid on;
+
 %% FFT Range Profile
+% Range FFT
+% pre allocation
 radarCubeData_demo = zeros(128,4,256);
 for chirpIdx = 1:128
     for chIdx = 1:4
@@ -80,10 +90,29 @@ for chirpIdx = 1:128
     end
 end
 rangeProfileData = radarCubeData_demo(chirpsIdx, chanIdx , :);
+
+
+% linear mode
 channelData = abs(rangeProfileData(:));
+
+%Range
+%rangeBin = linspace(0, Params.numRangeBins * Params.RFParams.rangeResolutionsInMeters, Params.numRangeBins);
 rangeBin = linspace(0,numrangeBins *range_resolution, numrangeBins);
 
-%% mti
+% % not MTI filter range profile plot
+% nexttile;
+% plot(rangeBin,channelData)
+% xlabel('Range (m)');                  
+% ylabel('Range FFT output (dB)');        
+% title('Range Profile (not MTI)');
+% grid on;
+
+%% Doppler FFT
+
+%-----------------------------------------------------------------------------------------------------------
+% MTI filter - range FFT 된 data에 대해
+% single delay line canceller
+% range에 대해 fft된 data를 chirp끼리 비교
 radarCubeData_mti = zeros(128,4,256);
 radarCubeData_mti(1,:,:) = radarCubeData_demo(1,:,:);
 for chirpidx = 1:127
@@ -99,81 +128,28 @@ end
 % MTI filter range profile plot
 rangeProfileData_mti = radarCubeData_mti(chirpsIdx, chanIdx , :);
 channelData_mti = abs(rangeProfileData_mti(:));
-figure('Position', [30, 10, 600, 300]);
-
-tiledlayout(1,3);
 nexttile;
 plot(rangeBin,channelData_mti)
 xlabel('Range (m)');                  
 ylabel('Range FFT output (dB)');        
 title('Range Profile (MTI)');
 grid on;
-hold on;
-
-%% 1D Peak
-minPeakHeight = 10;
-% [peaks, peak_locs] = findpeaks(abs(channelData_mti), 'MinPeakHeight', minPeakHeight);
-% plot(rangeBin(peak_locs), peaks, 'ro');
-
-Th_peak = 1;
-
-radarCubeData_stem = ones(128, 4, 256) * min(channelData);
-
-for chirpsIdx = 1:128
-    for chIdx = 1:4
-        p_cubeData = radarCubeData_mti(chirpsIdx, chIdx , :);
-        p_rangeProfileData_mti = squeeze(p_cubeData);
-        p_channelData_mti = abs(p_rangeProfileData_mti(:));
-        [peaks, peak_locs] = findpeaks(abs(p_channelData_mti), 'MinPeakHeight', minPeakHeight);
-    
-        stemRange = ones(size(rangeBin)) * min(channelData);
-        
-            for i = 1:length(peaks)-1
-                if peaks(i) > peaks(i+1)
-                    lower = peaks(i+1);
-                    higher = peaks(i);
-                    locs = peak_locs(i);
-                else
-                    lower = peaks(i);
-                    higher = peaks(i+1);
-                    locs = peak_locs(i+1);
-                end
-            
-                ratio = abs(lower) / abs(higher);
-                
-                if ratio < Th_peak
-                    tgPeak = higher;
-                    %plot(rangeAxis(axis), tgPeak, 'go');
-                    stemRange(locs) = p_rangeProfileData_mti(locs);     
-                end
-            end
-        
-        radarCubeData_stem(chirpsIdx, chIdx, :) = stemRange(:);
-    end
-end
-
-hold off;
-% 
-% nexttile;
-% stem(rangeBin, stemRange);
-% xlabel('Range');
-% ylabel('Range FFT Output [dB]');
-% title('Target Peak stem');
-
-%% Peak Doppler map
+%-----------------------------------------------------------------------------------------------------------
 
 N=length(adc_raw_data);
 win_dop = hann(128);
 % pre allocation
 doppler = zeros(128,4,256);
 for rangebin_size = 1:256
+    for chIdx = 1:4
         win_dop = hann(128);
-        DopData1 = squeeze(radarCubeData_stem(:,chIdx, rangebin_size)); %여기 radarCubeData_mti->radarCubeData_demo
+        DopData1 = squeeze(radarCubeData_mti(:, chIdx, rangebin_size)); %여기 radarCubeData_mti->radarCubeData_demo
         DopData = fftshift(fft(DopData1 .* win_dop, 128));
         doppler(:, chIdx, rangebin_size) = DopData;
+    end
 end      
 %여기서 채널idx바꿀 수 있음.
-doppler1 =  doppler(:,:);
+doppler1 =  doppler(:,chanIdx,:);
 doppler1_128x256 = squeeze(doppler1);
 db_doppler = 10*log10(abs(doppler1_128x256'));
 
@@ -182,6 +158,8 @@ db_doppler = 10*log10(abs(doppler1_128x256'));
 [max_row, max_col] = ind2sub(size(db_doppler), linearIndex);
 
 %% Range Doppler map
+
+% 속도,range 계산
 velocityAxis = -max_vel:velocity_resolution:max_vel;
 
 nexttile;
@@ -191,3 +169,60 @@ ylabel('Range (m)');
 yticks(0:2:max(rangeBin));
 title('Range-Doppler Map');
 colorbar;
+axis xy
+
+% %2DFFT surface
+% nexttile;
+% surf(velocityAxis, rangeBin, db_doppler);
+% xlabel('Velocity (m/s)');
+% ylabel('Range (m)');
+% yticks(0:1:max(rangeBin));
+% title('Range-Doppler Map');
+% colorbar;
+% axis xy
+
+
+%% Map Range Peak detect
+minPeakHeight = 10;
+Th_peak = 1.0;
+
+peak_doppler = zeros(256,128);
+
+for bin = 1:128
+
+    [peaks, peak_locs] = findpeaks(db_doppler(:,bin), 'MinPeakHeight', minPeakHeight);
+    stemRange = zeros(size(rangeBin));
+
+    for i = 1:length(peaks)-1
+        
+        if peaks(i) > peaks(i+1)
+            lower = peaks(i+1);
+            higher = peaks(i);
+            locs = peak_locs(i);
+        else
+            lower = peaks(i);
+            higher = peaks(i+1);
+            locs = peak_locs(i+1);
+        end
+    
+        ratio = abs(lower) / abs(higher);
+
+        if ratio < Th_peak
+            %stemRange(1, locs) = higher;            
+            peak_doppler(locs, bin) = higher;
+        end
+        
+        %peak_doppler(locs, bin) = higher;
+    end
+    disp(length(peaks));
+end
+
+nexttile;
+imagesc(velocityAxis,rangeBin,peak_doppler);
+xlabel('Velocity (m/s)');
+ylabel('Range (m)');
+yticks(0:2:max(rangeBin));
+title('Range-Doppler Map');
+colorbar;
+axis xy
+
