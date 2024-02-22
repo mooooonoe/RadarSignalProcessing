@@ -38,11 +38,11 @@ while true
         if peaks(i) > peaks(i+1)
             lower = peaks(i+1);
             higher = peaks(i);
-            axis = peak_locs(i);
+            locs = peak_locs(i);
         else
             lower = peaks(i);
             higher = peaks(i+1);
-            axis = peak_locs(i+1);
+            locs = peak_locs(i+1);
         end
     
         ratio = abs(lower) / abs(higher);
@@ -50,7 +50,7 @@ while true
             tgPeak = higher;
             %plot(rangeAxis(axis), tgPeak, 'go');
             peakCnt = peakCnt+1;
-            stemRange(axis) = tgPeak;            
+            stemRange(locs) = tgPeak;            
         end
     end
     
@@ -61,16 +61,17 @@ while true
     Th_peak = Th_peak - 0.01;
 end
 
-xlabel('Range');
-ylabel('Range FFT Output [dB]');
-title('Range Profile with Peaks Highlighted');
-legend('Range Profile', 'Peaks', 'target');
-
 for i = 1:length(stemRange)
     if stemRange(i) ~= 0
         plot(rangeAxis(i), stemRange(i), 'go', 'MarkerSize', 10);
     end
 end
+
+xlabel('Range');
+ylabel('Range FFT Output [dB]');
+title('Range Profile with Peaks Highlighted');
+legend('Range Profile', 'Peaks', 'target');
+
 hold off;
 
 figure;
@@ -78,3 +79,5 @@ stem(rangeAxis, stemRange);
 xlabel('Range');
 ylabel('Range FFT Output [dB]');
 title('Range Profile with Target Peaks Highlighted');
+
+
