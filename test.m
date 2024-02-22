@@ -9,7 +9,7 @@ objectNum = 2;
 %parameters
 chirpsIdx=1;
 chanIdx=1;
-frame_number=128;
+frame_number=118;
 
 numrangeBins=256;
 NChirp=128;
@@ -148,12 +148,20 @@ smoothed_fft_result = sgolayfilt(channelData_mti, polynomialOrder, windowSize);
 hold on; 
 plot(rangeBin, smoothed_fft_result, 'g', 'LineWidth', 2); 
 subtitle('with smoothing');
-legend('Range Profile', 'LPC estimate', 'Sgolay filtered');
+
+
+minPeakHeight = 10;
+[peaks, peak_locs] = findpeaks(smoothed_fft_result, 'MinPeakHeight', minPeakHeight);
+plot(rangeBin(peak_locs), peaks, 'ro');
+
+hold off;
+legend('Range Profile', 'LPC estimate', 'Sgolay filtered', 'sg peaks');
 
 
 for n = 1:256
     input(n)=abs(smoothed_fft_result(n));
 end
+
 
 %% CFAR PARAMETER
 input_sz = size(input);
@@ -176,7 +184,7 @@ th_OS = zeros(input_sz);
 factor_OS = 1.2;
 arr_sz = window_sz-no_gcell-1;
 
-%% CA CFAR window
+%% CA CFAR
 for cutIdx = 1:256
     cut = filtered_input(cutIdx);
     for windowIdx = 1:window_sz
@@ -198,45 +206,52 @@ for cutIdx = 1:256
     th_CA(cutIdx) = (mean)*factor_CA;
     end
 end
-% 
-% 
-% while true
-%     detected_points_CA = find(filtered_input > th_CA);
-%     [~, objectCnt_CA] = size(detected_points_CA);
-% 
-%     if objectCnt_CA == objectNum
-%         break;
-%     end
-% 
-%     factor_CA = factor_CA + 0.1;
-% 
-%     for cutIdx = 1:256
-%         cut = filtered_input(cutIdx);
-%         for windowIdx = 1:window_sz
-%             sum = 0;
-%             cnt = 0;
-%             for i = (no_tcell/2):-1:1
-%                 if (cutIdx-i > 0)
-%                     sum = sum + filtered_input(cutIdx-i);
-%                     cnt = cnt+1;
-%                 end
-%             end
-%             for j = 1:(no_tcell/2)
-%                 if ((cutIdx+no_gcell+j) <= 256)
-%                     sum = sum + filtered_input(cutIdx+no_gcell+j);
-%                     cnt = cnt+1;
-%                 end
-%             end
-%             mean = sum/cnt;
-%             th_CA(cutIdx) = (mean)*factor_CA;
-%         end
-%     end
-% end
 
-%% CA CFAR DETECTOR
-detected_points_CA = find(filtered_input > th_CA);
-[~, objectCnt_CA] = size(detected_points_CA);
 
+while true
+    detected_points_CA = []; 
+
+    for i = 1:length(peak_locs)
+        if filtered_input(peak_locs(i)) > th_CA(peak_locs(i))
+            detected_points_CA = [detected_points_CA, peak_locs(i)];
+        end
+    end
+
+    [~, objectCnt_CA] = size(detected_points_CA);
+
+    if objectCnt_CA == objectNum
+        break;
+    end
+
+    factor_CA = factor_CA + 0.1;
+
+    for cutIdx = 1:256
+        cut = filtered_input(cutIdx);
+        for windowIdx = 1:window_sz
+            sum = 0;
+            cnt = 0;
+            for i = (no_tcell/2):-1:1
+                if (cutIdx-i > 0)
+                    sum = sum + filtered_input(cutIdx-i);
+                    cnt = cnt+1;
+                end
+            end
+            for j = 1:(no_tcell/2)
+                if ((cutIdx+no_gcell+j) <= 256)
+                    sum = sum + filtered_input(cutIdx+no_gcell+j);
+                    cnt = cnt+1;
+                end
+            end
+            mean = sum/cnt;
+            th_CA(cutIdx) = (mean)*factor_CA;
+        end
+    end
+end
+% 
+% %% CA CFAR DETECTOR
+% detected_points_CA = find(filtered_input > th_CA);
+% [~, objectCnt_CA] = size(detected_points_CA);
+% 
 %% OS CFAR 
 for cutIdx = 1:256
     cut = filtered_input(cutIdx);
@@ -244,7 +259,7 @@ for cutIdx = 1:256
     sorted_arr = zeros(1,arr_sz);
     cnt = 1;
     for windowIdx = 1:window_sz
-        
+
         for i = (no_tcell/2):-1:1
             if (cutIdx-i > 0)
                 arr(1,cnt) = filtered_input(cutIdx-i);
@@ -262,11 +277,16 @@ for cutIdx = 1:256
         th_OS(cutIdx) = sorted_arr(id)*factor_OS;
     end
 end
-
+% 
 % 
 % while true
-%     detected_points_OS = find(filtered_input > th_OS);
-%     [~, objectCnt_OS] = size(detected_points_OS);
+%     detected_points_OS = []; 
+% 
+%     for i = 1:length(peak_locs)
+%         if filtered_input(peak_locs(i)) > th_OS(peak_locs(i))
+%             detected_points_OS = [detected_points_OS, peak_locs(i)];
+%         end
+%     end
 % 
 %     if objectCnt_OS == objectNum
 %         break;
@@ -300,9 +320,9 @@ end
 %     end
 % end
 
+
+
 %% OS CFAR DETECTOR
-detected_points_OS = find(filtered_input > th_OS);
-[~, objectCnt_OS] = size(detected_points_OS);
 
 figure;
 plot(rangeBin, filtered_input, 'LineWidth', 0.5);
