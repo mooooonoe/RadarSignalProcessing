@@ -3,10 +3,20 @@ x = linspace(0, 2*pi, 100);
 y = sin(x);
 
 % 초기 플롯
-plotHandle = plot(x, y);
+tiledlayout(1, 2);
+fig = gcf;
+
+nexttile;
+plotFirst = plot(x, y);
 xlabel('X');
 ylabel('Y');
-title('Real-time Plot');
+title('Real-time Plot 1');
+
+nexttile;
+plotSecond = plot(x, y); % 초기에는 같은 데이터를 가짐
+xlabel('X');
+ylabel('Y');
+title('Real-time Plot 2');
 
 % 시뮬레이션을 위한 반복문
 for i = 1:100
@@ -14,8 +24,9 @@ for i = 1:100
     y = sin(x + i * 0.1);
     
     % 그래픽 객체 업데이트
-    set(plotHandle, 'YData', y);
-    
+    set(plotFirst, 'YData', y);
+    set(plotSecond, 'XData', y); % 두 번째 플롯의 y 축 데이터 업데이트
+
     % 그래픽 창 업데이트
     drawnow;
     
