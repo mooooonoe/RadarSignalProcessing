@@ -173,18 +173,19 @@ function s_processing = signal(frame_number, rangeplot, lpcplot, sgplot, peakplo
     
     %% LPC
     x = (channelData_mti);
+    %order = 5000000+5; % (sampling_rate/1000)+5 = (5e9/1000)+5
     order = 5;
-    a = lpc(x, order);
-    est_x = filter([0 -a(4:end)], 1, x); % LPC estimate
+    a = lpc(x, order); 
+    est_x = filter([0 -a(2:end)], 1, x); % LPC estimate
     
     hold on;
     lpcplot = plot(rangeBin, est_x, 'r', 'LineWidth', 2);
     hold off;
     
     %% Sgolay filter
-    windowSize = 15;
-    polynomialOrder = 2;
-    smoothed_fft_result = sgolayfilt(channelData_mti, polynomialOrder, windowSize);
+    windowSize = 9;
+    polynomialOrder = 3;
+    smoothed_fft_result = sgolayfilt(est_x, polynomialOrder, windowSize);
     
     hold on;
     sgplot = plot(rangeBin, smoothed_fft_result, 'g', 'LineWidth', 2);
@@ -196,6 +197,204 @@ function s_processing = signal(frame_number, rangeplot, lpcplot, sgplot, peakplo
     
     hold off;
     legend('Range Profile', 'LPC estimate', 'Sgolay filtered', 'sg peaks');
+    
+
+input = zeros(size(smoothed_fft_result));
+
+for n = 1:256
+    input(n)=abs(smoothed_fft_result(n));
+end
+
+
+%% CFAR PARAMETER
+input_sz = size(input);
+
+no_tcell = 20;
+no_gcell = 2;
+window_sz= no_gcell + no_tcell + 1 ;
+
+beta = 0.1;
+
+%% MTI filter
+filtered_input = mti_filter(input, beta);
+
+%% CA INIT
+th_CA = zeros(input_sz);
+factor_CA = 1.2;
+
+%% OS INIT
+th_OS = zeros(input_sz);
+factor_OS = 1.2;
+arr_sz = window_sz-no_gcell-1;
+
+%% CA CFAR window
+for cutIdx = 1:256
+    cut = filtered_input(cutIdx);
+    for windowIdx = 1:window_sz
+    sum = 0;
+    cnt = 0;
+    for i = (no_tcell/2):-1:1
+        if (cutIdx-i > 0)
+            sum = sum + filtered_input(cutIdx-i);
+            cnt = cnt+1;
+        end
+    end
+    for j = 1:(no_tcell/2)
+        if ((cutIdx+no_gcell+j) <= 256)
+        sum = sum + filtered_input(cutIdx+no_gcell+j);
+        cnt = cnt+1;
+        end
+    end
+    mean = sum/cnt;
+    th_CA(cutIdx) = (mean)*factor_CA;
+    end
+end
+
+
+while true
+    detected_points_CA = []; 
+
+    for i = 1:length(peak_locs)
+        if filtered_input(peak_locs(i)) > th_CA(peak_locs(i))
+            detected_points_CA = [detected_points_CA, peak_locs(i)];
+        end
+    end
+
+    [~, objectCnt_CA] = size(detected_points_CA);
+
+    if objectCnt_CA == objectNum
+        break;
+    end
+
+    factor_CA = factor_CA + 0.1;
+
+    for cutIdx = 1:256
+        cut = filtered_input(cutIdx);
+        for windowIdx = 1:window_sz
+            sum = 0;
+            cnt = 0;
+            for i = (no_tcell/2):-1:1
+                if (cutIdx-i > 0)
+                    sum = sum + filtered_input(cutIdx-i);
+                    cnt = cnt+1;
+                end
+            end
+            for j = 1:(no_tcell/2)
+                if ((cutIdx+no_gcell+j) <= 256)
+                    sum = sum + filtered_input(cutIdx+no_gcell+j);
+                    cnt = cnt+1;
+                end
+            end
+            mean = sum/cnt;
+            th_CA(cutIdx) = (mean)*factor_CA;
+        end
+    end
+end
+% 
+% %% CA CFAR DETECTOR
+% detected_points_CA = find(filtered_input > th_CA);
+% [~, objectCnt_CA] = size(detected_points_CA);
+% 
+%% OS CFAR 
+for cutIdx = 1:256
+    cut = filtered_input(cutIdx);
+    arr = zeros(1,arr_sz);
+    sorted_arr = zeros(1,arr_sz);
+    cnt = 1;
+    for windowIdx = 1:window_sz
+
+        for i = (no_tcell/2):-1:1
+            if (cutIdx-i > 0)
+                arr(1,cnt) = filtered_input(cutIdx-i);
+                cnt = cnt + 1;
+            end
+        end
+        for j = 1:(no_tcell/2)
+            if ((cutIdx+no_gcell+j) <= 256)
+                arr(1,cnt) = filtered_input(cutIdx+no_gcell+j);
+                cnt = cnt + 1;
+            end
+        end
+        sorted_arr = sort(arr);
+        id = ceil(3*cnt/4);
+        th_OS(cutIdx) = sorted_arr(id)*factor_OS;
+    end
+end
+
+
+while true
+    detected_points_OS = []; 
+
+    for i = 1:length(peak_locs)
+        if filtered_input(peak_locs(i)) > th_OS(peak_locs(i))
+            detected_points_OS = [detected_points_OS, peak_locs(i)];
+        end
+    end
+
+    [~, objectCnt_OS] = size(detected_points_OS);
+
+    if objectCnt_OS == objectNum
+        break;
+    end
+
+    factor_OS = factor_OS + 0.1;
+
+    for cutIdx = 1:256
+        cut = filtered_input(cutIdx);
+        arr = zeros(1,arr_sz);
+        sorted_arr = zeros(1,arr_sz);
+        cnt = 1;
+        for windowIdx = 1:window_sz
+
+            for i = (no_tcell/2):-1:1
+                if (cutIdx-i > 0)
+                    arr(1,cnt) = filtered_input(cutIdx-i);
+                    cnt = cnt + 1;
+                end
+            end
+            for j = 1:(no_tcell/2)
+                if ((cutIdx+no_gcell+j) <= 256)
+                    arr(1,cnt) = filtered_input(cutIdx+no_gcell+j);
+                    cnt = cnt + 1;
+                end
+            end
+            sorted_arr = sort(arr);
+            id = ceil(3*cnt/4);
+            th_OS(cutIdx) = sorted_arr(id)*factor_OS;
+        end
+    end
+end
+
+
+
+%% OS CFAR DETECTOR
+% detected_points_OS = find(filtered_input > th_OS);
+% [~, objectCnt_OS] = size(detected_points_OS);
+
+figure;
+plot(rangeBin, filtered_input, 'LineWidth', 0.5);
+hold on;
+plot(rangeBin, th_CA, 'Color', 'r', 'LineWidth', 1.5);
+plot(rangeBin, th_OS, 'LineStyle', '--', 'Color', 'b', 'LineWidth', 1.5);
+mylinestyles = ["-"; "--"];
+ax = gca; 
+ax.LineStyleOrder = mylinestyles;
+plot(rangeBin(detected_points_CA), filtered_input(detected_points_CA), 'o', 'MarkerSize', 8, 'Color', 'r');
+hold on;
+plot(rangeBin(detected_points_OS), filtered_input(detected_points_OS), 'o', 'MarkerSize', 7, 'Color', 'b');
+
+legend('Sgolay filter', 'CA-CFAR Threshold', 'OS-CFAR Threshold', 'CA detect data', 'OS detect data');
+xlabel('Range (m)');
+ylabel('Power (dB)');
+titleStr = sprintf('CFAR Detection\nNumber of detections: %d', length(detected_points_OS));
+title(titleStr);
+
+for i = 1:length(detected_points_OS)
+    text(rangeBin(detected_points_OS(i)), filtered_input(detected_points_OS(i)), [num2str(rangeBin(detected_points_OS(i))), 'm'], 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+end
+
+
+
 
     %% update
     set(rangeplot, 'XData', rangeBin, 'YData', channelData_mti);
@@ -204,4 +403,6 @@ function s_processing = signal(frame_number, rangeplot, lpcplot, sgplot, peakplo
     set(peakplot, 'XData', rangeBin(peak_locs), 'YData', peaks);
     
 
+
 end
+

@@ -133,7 +133,7 @@ x = (channelData_mti);
 
 order = 5;
 a = lpc(x, order);  
-est_x = filter([0 -a(4:end)], 1, x); % LPC estimate
+est_x = filter([0 -a(2:end)], 1, x); % LPC estimate
 
 hold on;
 plot(rangeBin, est_x, 'r', 'LineWidth', 2);
@@ -141,9 +141,9 @@ hold off;
 
 
 %% Sgolay filter
-windowSize = 15;
+windowSize = 9;
 polynomialOrder = 3;
-smoothed_fft_result = sgolayfilt(channelData_mti, polynomialOrder, windowSize);
+smoothed_fft_result = sgolayfilt(est_x, polynomialOrder, windowSize);
 
 hold on; 
 plot(rangeBin, smoothed_fft_result, 'g', 'LineWidth', 2); 
@@ -157,6 +157,7 @@ plot(rangeBin(peak_locs), peaks, 'ro');
 hold off;
 legend('Range Profile', 'LPC estimate', 'Sgolay filtered', 'sg peaks');
 
+input = zeros(size(smoothed_fft_result));
 
 for n = 1:256
     input(n)=abs(smoothed_fft_result(n));

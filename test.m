@@ -1,24 +1,145 @@
-% 예시를 위한 데이터 생성
-x = linspace(0, 2*pi, 100);
-y = sin(x);
+load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
+    load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
+    
+    objectNum = 2;
 
-% 초기 플롯
-plotHandle = plot(x, y);
-xlabel('X');
-ylabel('Y');
-title('Real-time Plot');
+    % parameters
+    chirpsIdx = 1;
+    chanIdx = 1;
+    numrangeBins = 256;
+    NChirp = 128;
+    NChan = 4;
+    NSample = 256;
+    Nframe = 256; % 프레임 수
+    pri = 76.51e-6; % ramp end tiem + idle time
+    prf = 1 / pri;
+    start_frequency = 77e9; % 시작 주파수 (Hz)
+    slope = 32.7337; % 슬로프 (MHz/s)
+    samples_per_chirp = 256; % 하나의 칩에서의 샘플 수
+    chirps_per_frame = 128; % 프레임 당 chirps 수
+    sampling_rate = 5e9; % 샘플링 속도 (Hz)
+    % 대역폭 = sampling time*frequency slope (sampling time = samples / sample rate)
+    bandwidth = 1.6760e9; % 대역폭 (Hz)
+    % 거리 해상도 = c/(2*bandwidth)
+    range_resolution = 0.0894; % 거리 해상도 (m)
+    % 속도 해상도 = wavelength/(2*pri*Nchirp)
+    velocity_resolution = 0.1991; % 속도 해상도 (m/s)
+    sampling_time = NSample / sampling_rate; % 샘플링 타임 (s)
+    c = 3e8; % 빛의 속도 (미터/초)
+    wavelength = c / start_frequency; % 파장(lambda)
+    max_vel = wavelength / (4 * pri); % 최대 속도
+    max_range = sampling_rate * c / (2 * slope); % 최대 거리
+    
+    % 전체 걸린 시간 frame periodicity : 40ms -> 40ms*256 = 10.24s
+    
+    %% Time domain output
+    
+    % adcRawData -> adc_raw_data1
+    adc_raw_data1 = adcRawData.data{frame_number};
+    
+    % adc_raw_data1->uint type 이기때문에 double type으로 바꿔줘야 연산 가능
+    adc_raw_data = cast(adc_raw_data1, "double");
+    
+    % unsigned => signed
+    signed_adc_raw_data = adc_raw_data - 65536 * (adc_raw_data > 32767);
+    
+    % IIQQ data
+    re_adc_raw_data4 = reshape(signed_adc_raw_data, [4, length(signed_adc_raw_data) / 4]);
+    rawDataI = reshape(re_adc_raw_data4(1:2, :), [], 1);
+    rawDataQ = reshape(re_adc_raw_data4(3:4, :), [], 1);
+    
+    frameData = [rawDataI, rawDataQ];
+    frameCplx = frameData(:, 1) + 1i * frameData(:, 2);
+    frameComplex = single(zeros(NChirp, NChan, NSample));
+    
+    % IIQQ->IQ smaple->channel->chirp
+    temp = reshape(frameCplx, [NSample * NChan, NChirp]).';
+    for chirp = 1:NChirp
+        frameComplex(chirp, :, :) = reshape(temp(chirp, :), [NSample, NChan]).';
+    end
+    rawFrameData = frameComplex;
+    
+    currChDataQ = real(rawFrameData(chirpsIdx, chanIdx, :));
+    currChDataI = imag(rawFrameData(chirpsIdx, chanIdx, :));
+    
+    % t=linspace(0,NSample-1,NSample);
+    t = linspace(0, sampling_time, NSample);
+    
+    %% FFT Range Profile
+    % Range FFT
+    % pre allocation
+    radarCubeData_demo = zeros(128, 4, 256);
+    % for chirpIdx = 1:128
+    %     for chIdx = 1:4
+    %         win = rectwin(256);
+    %         frameData1(1, :) = frameComplex(chirpIdx, chIdx, :);
+    %         frameData2 = fft(frameData1 .* win', 256);
+    %         radarCubeData_demo(chirpIdx, chIdx, :) = frameData2(1, :);
+    %     end
+    % end
 
-% 시뮬레이션을 위한 반복문
-for i = 1:100
-    % 데이터 업데이트 (여기서는 예시로 sin 함수를 사용)
-    y = sin(x + i * 0.1);
+     for chirpIdx = 1:128
+            win = rectwin(256);
+            frameData1(1, :) = frameComplex(chirpIdx, 1, :);
+            frameData2 = fft(frameData1 .* win', 256);
+            radarCubeData_demo(chirpIdx, 1, :) = frameData2(1, :);
+
+            win = rectwin(256);
+            frameData1(1, :) = frameComplex(chirpIdx, 2, :);
+            frameData2 = fft(frameData1 .* win', 256);
+            radarCubeData_demo(chirpIdx, 2, :) = frameData2(1, :);
+
+            win = rectwin(256);
+            frameData1(1, :) = frameComplex(chirpIdx, 3, :);
+            frameData2 = fft(frameData1 .* win', 256);
+            radarCubeData_demo(chirpIdx, 3, :) = frameData2(1, :);
+
+            win = rectwin(256);
+            frameData1(1, :) = frameComplex(chirpIdx, 4, :);
+            frameData2 = fft(frameData1 .* win', 256);
+            radarCubeData_demo(chirpIdx, 4, :) = frameData2(1, :);
+
+    end
     
-    % 그래픽 객체 업데이트
-    set(plotHandle, 'YData', y);
+    rangeProfileData = radarCubeData_demo(chirpsIdx, chanIdx, :);
     
-    % 그래픽 창 업데이트
-    drawnow;
+    % linear mode
+    channelData = abs(rangeProfileData(:));
     
-    % 잠시 일시 정지하여 시뮬레이션 속도를 조절할 수 있습니다.
-    pause(0.1); % 0.1초마다 업데이트
-end
+    % Range
+    rangeBin = linspace(0, numrangeBins * range_resolution, numrangeBins);
+    
+    %% Doppler FFT
+    
+    % MTI filter - range FFT 된 data에 대해
+    % single delay line canceller
+    % range에 대해 fft된 data를 chirp끼리 비교
+    radarCubeData_mti = zeros(128, 4, 256);
+    radarCubeData_mti(1, :, :) = radarCubeData_demo(1, :, :);
+    for chirpidx = 1:127
+        radarCubeData_mti(chirpidx + 1, :, :) = radarCubeData_demo(chirpidx, :, :) - radarCubeData_demo(chirpidx + 1, :, :);
+    end
+    
+    % double delay line canceller
+    radarCubeData_mti2 = zeros(128, 4, 256);
+    radarCubeData_mti2(1, :, :) = radarCubeData_mti(1, :, :);
+    for chirpidx = 1:127
+        radarCubeData_mti2(chirpidx + 1, :, :) = radarCubeData_mti(chirpidx, :, :) - radarCubeData_mti(chirpidx + 1, :, :);
+    end
+    
+    % MTI filter range profile plot
+    rangeProfileData_mti = radarCubeData_mti(chirpsIdx, chanIdx, :);
+    channelData_mti = abs(rangeProfileData_mti(:));
+
+    rangeplot = plot(rangeBin, channelData_mti);
+    xlabel('Range (m)');
+    ylabel('Range FFT output (dB)');
+    title('Range Profile (MTI)');
+    grid on;
+    hold on;
+
+    minPeakHeight = 10;
+    [peaks, peak_locs] = findpeaks(channelData_mti, 'MinPeakHeight', minPeakHeight);
+    peakplot = plot(rangeBin(peak_locs), peaks, 'ro');
+
+    hold off;
