@@ -9,7 +9,7 @@ objectNum = 2;
 %parameters
 chirpsIdx=1;
 chanIdx=1;
-frame_number=128;
+frame_number=256;
 
 numrangeBins=256;
 NChirp=128;
