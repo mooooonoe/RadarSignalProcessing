@@ -4,10 +4,12 @@ close all;
 load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
 load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
 
+objectNum = 2;
+
 %parameters
 chirpsIdx=1;
 chanIdx=1;
-frame_number=128;
+frame_number=90;
 
 numrangeBins=256;
 NChirp=128;
@@ -411,7 +413,7 @@ for cutRIdx = 1:sz_r
             sorted_arr = sort(arr);
             size_arr = size(sorted_arr);
             id = ceil(3*(size_arr(2))/4);
-            value_OS = sorted_arr(id)*1.3;
+            value_OS = sorted_arr(id)*1.2;
         end
 
         for windowRIdx = 1:window_sz
@@ -430,7 +432,7 @@ for cutRIdx = 1:sz_r
                 end
             end
             mean = sum/cnt_CA;
-            value_CA = mean*1.3;
+            value_CA = mean*1.2;
 
         end
 
@@ -468,6 +470,7 @@ yticks(0:2:max(rangeBin));
 title('2D CFAR Target Detect');
 colorbar;
 axis xy
+
 
 %% Micro doppler
 % pre allocation

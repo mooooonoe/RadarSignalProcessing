@@ -226,3 +226,17 @@ title('Range-Doppler Map');
 colorbar;
 axis xy
 
+%% Ragne Doppler map
+doppler = zeros(128, 4, 256); % Doppler FFT 결과를 저장할 배열 초기화
+
+for rangebin_size = 1:256
+    for chIdx = 1:4
+        win_dop = hann(128);
+        DopData1 = squeeze(peak_doppler(1, chIdx, rangebin_size)); % Peak를 포함한 데이터 추출
+        DopData = fftshift(fft(DopData1 .* win_dop, 128)); % FFT 수행
+        doppler(:, chIdx, rangebin_size) = DopData; % 결과 저장
+    end
+end
+
+
+ 

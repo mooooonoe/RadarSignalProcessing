@@ -7,7 +7,7 @@ load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMen
 %parameters
 chirpsIdx=1;
 chanIdx=1;
-frame_number=90;
+frame_number=30;
 
 numrangeBins=256;
 NChirp=128;
@@ -83,21 +83,21 @@ channelData = abs(rangeProfileData(:));
 rangeBin = linspace(0,numrangeBins *range_resolution, numrangeBins);
 
 
-%% Doppler FFT
-radarCubeData_mti = zeros(128,4,256);
-radarCubeData_mti(1,:,:) = radarCubeData_demo(1,:,:);
-for chirpidx = 1:127
-radarCubeData_mti(chirpidx+1,:,:) = radarCubeData_demo(chirpidx,:,:)-radarCubeData_demo(chirpidx+1,:,:);
-end
-% double delay line canceller
-radarCubeData_mti2 = zeros(128,4,256);
-radarCubeData_mti2(1,:,:) = radarCubeData_mti(1,:,:);
-for chirpidx = 1:127
-radarCubeData_mti2(chirpidx+1,:,:) = radarCubeData_mti(chirpidx,:,:)-radarCubeData_mti(chirpidx+1,:,:);
-end
-
-% MTI filter range profile plot
-rangeProfileData_mti = radarCubeData_mti(chirpsIdx, chanIdx , :);
+% %% Doppler FFT
+% radarCubeData_mti = zeros(128,4,256);
+% radarCubeData_mti(1,:,:) = radarCubeData_demo(1,:,:);
+% for chirpidx = 1:127
+% radarCubeData_mti(chirpidx+1,:,:) = radarCubeData_demo(chirpidx,:,:)-radarCubeData_demo(chirpidx+1,:,:);
+% end
+% % double delay line canceller
+% radarCubeData_mti2 = zeros(128,4,256);
+% radarCubeData_mti2(1,:,:) = radarCubeData_mti(1,:,:);
+% for chirpidx = 1:127
+% radarCubeData_mti2(chirpidx+1,:,:) = radarCubeData_mti(chirpidx,:,:)-radarCubeData_mti(chirpidx+1,:,:);
+% end
+% 
+% % MTI filter range profile plot
+rangeProfileData_mti = radarCubeData_demo(chirpsIdx, chanIdx , :);
 channelData_mti = abs(rangeProfileData_mti(:));
 N=length(adc_raw_data);
 win_dop = hann(128);
@@ -106,7 +106,7 @@ doppler = zeros(128,4,256);
 for rangebin_size = 1:256
     for chIdx = 1:4
         win_dop = hann(128);
-        DopData1 = squeeze(radarCubeData_mti(:, chIdx, rangebin_size)); %여기 radarCubeData_mti->radarCubeData_demo
+        DopData1 = squeeze(radarCubeData_demo(:, chIdx, rangebin_size)); %여기 radarCubeData_mti->radarCubeData_demo
         DopData = fftshift(fft(DopData1 .* win_dop, 128));
         doppler(:, chIdx, rangebin_size) = DopData;
     end
@@ -178,7 +178,7 @@ for cutRIdx = 1:sz_r
             sorted_arr = sort(arr);
             size_arr = size(sorted_arr);
             id = ceil(3*(size_arr(2))/4);
-            value_OS = sorted_arr(id)*1.3;
+            value_OS = sorted_arr(id)*1.35;
         end
 
         for windowRIdx = 1:window_sz
@@ -195,9 +195,10 @@ for cutRIdx = 1:sz_r
                 sum = sum + input(cutCIdx, cutRIdx+Ng+j);
                 cnt_CA = cnt_CA+1;
                 end
+
             end
             mean = sum/cnt_CA;
-            value_CA = mean*1.3;
+            value_CA = mean*1.0;
 
         end
 
@@ -242,3 +243,4 @@ yticks(0:2:max(rangeBin));
 title('2D CFAR Target Detect');
 colorbar;
 axis xy
+ 
