@@ -1,8 +1,8 @@
 clear;
 clc;
 close all;
-load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
-load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
+load('twomen_CUBE.mat');
+load('twomen_RAW.mat');
 
 %parameters
 chirpsIdx=1;
