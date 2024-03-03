@@ -29,7 +29,7 @@ clear;
 % title 'k-means 클러스터링 결과';
 % hold off;
 
-%% a large data set generate
+% a large data set generate
 rng(1); % For reproducibility
 Mu = ones(20,30).*(1:20)'; % Gaussian mixture mean
 rn30 = randn(30,30);
@@ -49,3 +49,34 @@ tic; % Start stopwatch timer
     'Display','final','Replicates',10);
 
 toc
+
+%% Generate C/C++ code
+rng('default')
+X = [randn(100,2)*0.75+ones(100,2);
+    randn(100,2)*0.5-ones(100,2);
+    randn(100,2)*0.75];
+
+[idx, C] = kmeans(X, 3);
+
+figure
+gscatter(X(:,1),X(:,2),idx,'bgm')
+hold on
+plot(C(:,1),C(:,2),'kx')
+legend('Cluster 1','Cluster 2','Cluster 3','Cluster Centroid')
+
+Xtest = [randn(10,2)*0.75+ones(10,2);
+    randn(10,2)*0.5-ones(10,2);
+    randn(10,2)*0.75];
+
+[~,idx_test] = pdist2(C,Xtest,'euclidean','Smallest',1);
+
+gscatter(Xtest(:,1),Xtest(:,2),idx_test,'bgm','ooo')
+legend('Cluster 1','Cluster 2','Cluster 3','Cluster Centroid', ...
+    'Data classified to Cluster 1','Data classified to Cluster 2', ...
+    'Data classified to Cluster 3')
+
+type findNearestCentroid
+
+myIndx = findNearestCentroid(C,Xtest);
+myIndex_mex = findNearestCentroid_mex(C,Xtest);
+verifyMEX = isequal(idx_test,myIndx,myIndex_mex)
