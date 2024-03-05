@@ -535,6 +535,28 @@ title('Data Clustering');
 axis xy
 colorbar;
 
+%% cluster radius
+for i = 1:k
+    distance = 0;
+    max = 0;
+    center = centers(i,:);
+    cluster_indices = find(idx == i);
+    num_points = length(cluster_indices);
+
+    for j = 1: num_points
+        xabs = abs(center(2) - data(cluster_indices(j), 2))^2;
+        yabs = abs(center(1) - data(cluster_indices(j), 1))^2;
+        distance = sqrt( xabs + yabs );
+        if distance > max
+            max = distance;
+        else
+            continue
+        end
+    end
+
+    disp(['Maximum distance of Cluster ' num2str(i) ' is ' num2str(max) ]);
+end
+
 %% filter function
 function filtered_input = mti_filter(rangeprofile, beta)
     len = length(rangeprofile);
