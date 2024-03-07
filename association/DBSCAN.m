@@ -555,17 +555,20 @@ for i = 1:256
             X = sprintf('%d, %d is cluster %d',i, j, idx_cnt);
             disp(X);
 
-            Z = sprintf('cluster %d range is %f', idx_cnt, rangeBin(j));
+            Z = sprintf('cluster %d range is %f', idx_cnt, rangeBin(i));
             disp(Z);
 
-            Y = sprintf('cluster %d speed is %f', idx_cnt, velocityAxis(i));
+            Y = sprintf('cluster %d speed is %f', idx_cnt, velocityAxis(j));
             disp(Y);
             
             idx_cnt = idx_cnt + 1;
+            k = idx_cnt;
             break;
         end
     end
 end
+
+
 
 figure;
 imagesc(velocityAxis,rangeBin,idx_db_doppler);
@@ -576,42 +579,71 @@ title('Range-Doppler Map with idx');
 colorbar;
 axis xy
 
-%% Calculate cluster centers
-num_clusters = max(idx);
-num_clusters(num_clusters == 0) = []; % 클러스터 번호가 0인 것 제외
 
-cluster_centers = zeros(length(num_clusters), 2);
+%% finde center of each cluster 
+% for calcurating ragne and vel
+for iidx = 1:k-1
+    clusterIdxGrid = zeros(size(clusterGrid));
 
-for k = 1:length(num_clusters)
-    cluster_points = data(idx == num_clusters(k), :); 
-    center_point = mean(cluster_points);
-    cluster_centers(k, :) = center_point;
+    idx_row_min = 0;
+    idx_row_max = 0;
+    idx_col_min = 0;
+    idx_col_max = 0;
+
+    for i = 1:256
+        for j = 1:128
+            if(idx_db_doppler(i,j) == iidx)
+                clusterIdxGrid(i,j) = 1;
+            end
+        end
+    end
+
+
+    for icol = 1:256
+        for jcol = 1:128
+            if clusterIdxGrid(icol, jcol) ~= 0
+                idx_col_min = jcol;
+                if idx_col_min > jcol
+                    idx_col_min = jcol;
+                end
+                if idx_col_max < jcol
+                    idx_col_max = jcol;
+                else
+                    continue;
+                end
+            end
+        end
+    end
+
+    for jrow = 1:128
+        for irow = 1:256
+            if clusterIdxGrid(irow, jrow) ~= 0
+                idx_row_min = irow;
+                if idx_row_min > irow
+                    idx_row_min = irow;
+                end
+                if idx_row_max < irow
+                    idx_row_max = irow;
+                else
+                    continue;
+                end
+            end
+        end
+    end
+    
+    idx_col_center = idx_col_max - round((idx_col_max - idx_col_min)/2);
+    idx_row_center = idx_row_max - round((idx_row_max - idx_row_min)/2);
+
+    X = sprintf('%d, %d center of cluster %d',idx_row_center, idx_col_center, iidx);
+    disp(X);
+
+    Z = sprintf('cluster %d range is %f', iidx, rangeBin(idx_row_center));
+    disp(Z);
+
+    Y = sprintf('cluster %d speed is %f', iidx, velocityAxis(idx_col_center));
+    disp(Y);
 end
 
-%% Display cluster centers
-disp('Cluster ID | Velocity (m/s) | Range (m)');
-disp('----------------------------------------');
-for k = 1:max(idx)
-    fprintf('%10d | %14.4f | %8.4f\n', k, cluster_centers(k, 1), cluster_centers(k, 2));
-end
-
-%% velocty and range of each cluster idxs 
-% cluster_centers = zeros(max(idx), 2);
-% 
-% for k = 1:max(idx)
-%     cluster_points = data(idx == k, :); 
-%     center_point = mean(cluster_points);
-% 
-% end
-
-
-
-% table 
-% disp('Cluster ID | Velocity (m/s) | Range (m)');
-% disp('----------------------------------------');
-% for k = 1:max(idx)
-%     fprintf('%10d | %14.4f | %8.4f\n', k, cluster_centers(k, 1), cluster_centers(k, 2));
-% end
 
 %% filter function
 function filtered_input = mti_filter(rangeprofile, beta)
