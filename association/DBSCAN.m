@@ -582,6 +582,8 @@ axis xy
 
 %% finde center of each cluster 
 % for calcurating ragne and vel
+data = cell(k-1, 3);
+
 for iidx = 1:k-1
     clusterIdxGrid = zeros(size(clusterGrid));
 
@@ -597,7 +599,6 @@ for iidx = 1:k-1
             end
         end
     end
-
 
     for icol = 1:256
         for jcol = 1:128
@@ -634,16 +635,23 @@ for iidx = 1:k-1
     idx_col_center = idx_col_max - round((idx_col_max - idx_col_min)/2);
     idx_row_center = idx_row_max - round((idx_row_max - idx_row_min)/2);
 
-    X = sprintf('%d, %d center of cluster %d',idx_row_center, idx_col_center, iidx);
-    disp(X);
-
-    Z = sprintf('cluster %d range is %f', iidx, rangeBin(idx_row_center));
-    disp(Z);
-
-    Y = sprintf('cluster %d speed is %f', iidx, velocityAxis(idx_col_center));
-    disp(Y);
+    % 중심 좌표, 범위 및 속도를 테이블에 저장
+    data{iidx, 1} = sprintf('%d, %d', idx_row_center, idx_col_center);
+    data{iidx, 2} = sprintf('%f', rangeBin(idx_row_center));
+    data{iidx, 3} = sprintf('%f', velocityAxis(idx_col_center));
 end
 
+% 테이블 헤더
+column_names = {'Center', 'Range', 'Speed'};
+
+% figure 생성
+fig = figure;
+
+% 테이블 생성
+uitable('Data', data, 'ColumnName', column_names, 'Position', [20 20 400 120], 'Parent', fig);
+
+% figure 창 크기 조정
+fig.Position(3:4) = [450 160];
 
 %% filter function
 function filtered_input = mti_filter(rangeprofile, beta)
