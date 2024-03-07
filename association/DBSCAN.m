@@ -570,12 +570,14 @@ end
 
 
 
-figure;
+figure('Position', [700, 700, 1200, 400]);
+tiledlayout(1,3);
+nexttile;
 imagesc(velocityAxis,rangeBin,idx_db_doppler);
 xlabel('Velocity (m/s)');
 ylabel('Range (m)');
 yticks(0:2:max(rangeBin));
-title('Range-Doppler Map with idx');
+title('Final Range-Doppler Map with idx');
 colorbar;
 axis xy
 
@@ -644,14 +646,12 @@ end
 % 테이블 헤더
 column_names = {'Center', 'Range', 'Speed'};
 
-% figure 생성
-fig = figure;
+% 테이블을 현재 figure에 추가
+uitable('Data', data, 'ColumnName', column_names, 'Position', [800 300 350 100]);
 
-% 테이블 생성
-uitable('Data', data, 'ColumnName', column_names, 'Position', [20 20 400 120], 'Parent', fig);
+% 테이블의 figure 창 크기 조정
+set(gcf,'Position', [100, 130, 1200, 400]);
 
-% figure 창 크기 조정
-fig.Position(3:4) = [450 160];
 
 %% filter function
 function filtered_input = mti_filter(rangeprofile, beta)
