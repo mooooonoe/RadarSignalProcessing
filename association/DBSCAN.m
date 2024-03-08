@@ -70,8 +70,8 @@ currChDataI = imag(rawFrameData(chirpsIdx,chanIdx,:));
 % t=linspace(0,NSample-1,NSample);
 t=linspace(0,sampling_time,NSample);
 
-figure('Position', [100, 700, 1200, 400]);
-tiledlayout(1,3);
+figure('Position', [100, 1400, 1200, 400]);
+tiledlayout(2,3);
 
 %% FFT Range Profile
 % Range FFT
@@ -163,7 +163,7 @@ imagesc(velocityAxis,rangeBin,db_doppler);
 xlabel('Velocity (m/s)');
 ylabel('Range (m)');
 yticks(0:2:max(rangeBin));
-title('Range-Doppler Map');
+title('Range-Doppler Map(MTI)');
 colorbar;
 axis xy
 
@@ -524,12 +524,14 @@ for i = 1:length(data)
         clusterGrid(data(i,2), data(i,1)) = 0;
     end
 end
-nexttile;
+
+ax = nexttile;
 imagesc(velocityAxis, rangeBin, clusterGrid);
 xlabel('Velocity (m/s)');
 ylabel('Range (m)');
-title('DBSCAN Clustering Result');
+title('DBSCAN Clustering');
 colorbar;
+%colormap(ax, flipud(hot(10)));
 axis xy;
 
 %% RagneDoppler Map idx imagesc
@@ -553,13 +555,13 @@ for i = 1:256
     for j = 1:128
         if(idx_db_doppler(i,j) == idx_cnt)
             X = sprintf('%d, %d is cluster %d',i, j, idx_cnt);
-            disp(X);
+            %disp(X);
 
             Z = sprintf('cluster %d range is %f', idx_cnt, rangeBin(i));
-            disp(Z);
+            %disp(Z);
 
             Y = sprintf('cluster %d speed is %f', idx_cnt, velocityAxis(j));
-            disp(Y);
+            %disp(Y);
             
             idx_cnt = idx_cnt + 1;
             k = idx_cnt;
@@ -570,8 +572,8 @@ end
 
 
 
-figure('Position', [700, 700, 1200, 400]);
-tiledlayout(1,3);
+%figure('Position', [500, 500, 1200, 400]);
+%tiledlayout(1,3);
 nexttile;
 imagesc(velocityAxis,rangeBin,idx_db_doppler);
 xlabel('Velocity (m/s)');
@@ -584,7 +586,9 @@ axis xy
 
 %% finde center of each cluster 
 % for calcurating ragne and vel
+
 data = cell(k-1, 3);
+nexttile;
 
 for iidx = 1:k-1
     clusterIdxGrid = zeros(size(clusterGrid));
@@ -641,16 +645,40 @@ for iidx = 1:k-1
     data{iidx, 1} = sprintf('%d, %d', idx_row_center, idx_col_center);
     data{iidx, 2} = sprintf('%f', rangeBin(idx_row_center));
     data{iidx, 3} = sprintf('%f', velocityAxis(idx_col_center));
+
+    % point 
+    
+    % theta = linspace(0, 2*pi, 100);
+    % radius = 1;
+    % circle_x = velocityAxis(idx_col_center) + radius * cos(theta);
+    % circle_y = rangeBin(idx_row_center) + radius * sin(theta);
+    
+    hold on;
+    scatter(velocityAxis(idx_col_center), rangeBin(idx_row_center), 10, 'o', 'filled');
+    text_str = sprintf('    idx %d', iidx);
+    text(velocityAxis(idx_col_center), rangeBin(idx_row_center),  text_str, 'Color', 'black', 'FontSize', 9);
+    %plot(circle_x, circle_y, 'k');
 end
+
+hold off;
+
+% 플롯에 관련된 설정
+xlabel('Velocity (m/s)');
+ylabel('Range (m)');
+yticks(0:2:max(rangeBin));
+ylim([min(rangeBin), max(rangeBin)]);
+xlim([min(velocityAxis), max(velocityAxis)]);
+title('detect object idx');
+axis xy;
 
 % 테이블 헤더
 column_names = {'Center', 'Range', 'Speed'};
 
 % 테이블을 현재 figure에 추가
-uitable('Data', data, 'ColumnName', column_names, 'Position', [800 300 350 100]);
+uitable('Data', data, 'ColumnName', column_names, 'Position', [800 200 350 100]);
 
 % 테이블의 figure 창 크기 조정
-set(gcf,'Position', [100, 130, 1200, 400]);
+set(gcf,'Position', [100, 400, 1200, 900]);
 
 
 %% filter function
