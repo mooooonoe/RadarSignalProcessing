@@ -1,0 +1,93 @@
+    
+    Ns = 256;
+    dt = 1;
+    t = 0:1:Ns-1;
+    
+    for k= 1:Ns
+    
+        sensorVel = HistoryMap(k, 2);
+        z = GetVel(sensorVel);
+        initpos = [HistoryMap(k, 1) HistoryMap(k, 2)]';
+        [pos, vel] = IntKalman(initpos, z);
+
+        Xsaved(k, :) = [pos vel];
+        Zsaved(k) = z;
+        
+    end
+
+    nonZeroIndices = any(Xsaved(:,[1 2]) ~= 0, 2);
+    XsavedNonZero = Xsaved(nonZeroIndices, :);
+    
+    XsavedNonZero(:,1) = XsavedNonZero(:,1) -5 ; % 거리 축 조정: -15가 0이 되도록
+    XsavedNonZero(:,2) = XsavedNonZero(:,2) - 5; % 속도 축 조정: 7이 0이 되도록
+    HistoryMap(:,1) = HistoryMap(:,1) - 5; 
+    HistoryMap(:,2) = HistoryMap(:,2) - 5; 
+
+    plot(HistoryMap(:,2), HistoryMap(:,1), 'x', 'color' , [0 0.4470 0.7410],'MarkerSize', 4, 'Parent', ax2);
+    hold'on';
+    plot(XsavedNonZero(:,2), XsavedNonZero(:,1), 'Parent', ax2);
+    legend('Clustering Centroids', 'Kalman Filtered')
+    hold(ax2, 'off');
+    xlim([min(velocityAxis), max(velocityAxis)]);
+    ylim([min(-rangeBin), max(rangeBin)*3.5]);
+    xlabel(ax2, 'Velocity (m/s)');
+    ylabel(ax2, 'Range (m)');
+    title(ax2, 'Kalman Filtering');
+
+    ax2.YTick = [];
+    %% Function IntKalman
+    
+    function [pos, vel] = IntKalman(x, z) % 속도 추정
+    
+        persistent A H Q R
+        persistent P
+        persistent firstRun
+        
+        
+        if isempty(firstRun)
+            firstRun = 1;
+            
+            dt = 0.1;
+            A = [1 dt;
+                 0 1 ];
+            H = [0 1];
+            
+            Q = [1 0;
+                 0 3];
+            R = 10;
+        
+            %x = [0 20]';
+            P = 5*eye(2); % eye(): identity matrix
+        end
+        
+        xp = A*x;
+        Pp = A*P*A' + Q;
+        
+        K = Pp*H' * inv(H*Pp*H' + R);
+        
+        x = xp + K*(z - H*xp);
+        
+        P = Pp - K*H*Pp;
+        
+        pos = x(1);
+        vel = x(2);
+    
+    end
+
+    %% Function GetVel
+
+    function z = GetVel(sensorVel)
+        Velp = sensorVel;
+        
+        persistent Posp
+        
+        if isempty(Posp)
+            Posp = 0;
+        end
+        
+        dt = 1;
+        Posp = Posp + Velp*dt;      % true position
+        
+        z = Velp;
+    
+    end
