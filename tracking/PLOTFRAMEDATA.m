@@ -92,5 +92,4 @@ function plotFilter(value, velocityAxis, rangeBin, HistoryMap, Xsaved, ax)
     xlabel(ax, 'Velocity (m/s)');
     ylabel(ax, 'Range (m)');
     title(ax, 'Kalman Filtering');
-    %ax.YTick = [];
 end

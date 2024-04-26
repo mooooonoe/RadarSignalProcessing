@@ -2,7 +2,7 @@ Frame Number: 51108
 Number of Detected Objects: 5
 detObj: {'numObj': 5, 'x': array([ 0.7498681 , -0.80985755, -1.4724683 , -1.574723  ,  0.28222308],
       dtype=float32), 'y': array([0.59914416, 0.51517636, 3.640039  , 4.301851  , 0.27300292],
-      dtype=float32), 'z': array([0., 0., 0., 0., 0.], dtype=float32), 'velocity': array([0.        , 0.        , 0.        , 0.        , 0.24346514],
+      dtype=float32), 'z': array([0., 0., 0., 0., 0.], dtype=float32), 'velocity': array([.   0     , 0.        , 0.        , 0.        , 0.24346514],
       dtype=float32)}
 
 Frame Number: 51109
