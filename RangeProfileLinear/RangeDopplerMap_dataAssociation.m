@@ -1,8 +1,8 @@
 clear;
 clc;
 close all;
-load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_CUBE.mat");
-load("\\223.194.32.78\Digital_Lab\Personals\Subin_Moon\Radar\0_MovingData\TwoMenRun\twomen_RAW.mat");
+load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_adc_raw_data.mat");
+load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_radarCube.mat");
 
 objectNum = 2;
 
@@ -236,7 +236,7 @@ filtered_input = mti_filter(input, beta);
 
 %% CA INIT
 th_CA = zeros(input_sz);
-factor_CA = 5;
+factor_CA = 8;
 
 %% OS INIT
 th_OS = zeros(input_sz);
@@ -379,19 +379,19 @@ plot(rangeBin, th_OS, 'LineStyle', '--', 'Color', 'b', 'LineWidth', 1.5);
 mylinestyles = ["-"; "--"];
 ax = gca; 
 ax.LineStyleOrder = mylinestyles;
-plot(rangeBin(detected_points_CA), filtered_input(detected_points_CA), 'o', 'MarkerSize', 8, 'Color', 'r');
+plot(rangeBin(detected_points_CA), filtered_input(detected_points_CA), 'o', 'MarkerSize', 5, 'Color', 'r');
 hold on;
 plot(rangeBin(detected_points_OS), filtered_input(detected_points_OS), 'o', 'MarkerSize', 7, 'Color', 'b');
 
 legend('Range Profile', 'CA-CFAR Threshold', 'OS-CFAR Threshold', 'CA detect data', 'OS detect data');
 xlabel('Range (m)');
 ylabel('Power (dB)');
-titleStr = sprintf('CFAR Detection\nNumber of detections: %d', length(detected_points_OS));
+titleStr = sprintf('CFAR Detection\nNumber of detections: %d', length(detected_points_OS)-1);
 title(titleStr);
 
-for i = 1:length(detected_points_OS)
-    text(rangeBin(detected_points_OS(i)), filtered_input(detected_points_OS(i)), [num2str(rangeBin(detected_points_OS(i))), 'm'], 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
-end
+% for i = 1:length(detected_points_OS)
+%     text(rangeBin(detected_points_OS(i)), filtered_input(detected_points_OS(i)), [num2str(rangeBin(detected_points_OS(i))), 'm'], 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+% end
 
 %% 2D CFAR input
 sz_c = size(db_doppler,1);
