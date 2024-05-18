@@ -1,6 +1,6 @@
 clear; close all;
-load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_adc_raw_data.mat");
-load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_radarCube.mat");
+load("Z:\AWR1843\0_u_DopplerMapData\walk\walk_adc_raw_data.mat");
+load("Z:\AWR1843\0_u_DopplerMapData\walk\walk_radarCube.mat");
 
 %% parameters
 chirpsIdx=50;

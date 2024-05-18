@@ -89,3 +89,6 @@ for ni = 1:numDetectedObjects
         objOut = [objOut, detMat(:,ni)];
     end
 end
+
+
+end

@@ -1,4 +1,4 @@
-function [clusterGrid, R, C] = DBSCAN(velocityAxis, rangeBin, detected_points)
+function [clusterGrid, R, C] = DBSCAN(y_axis, x_axis, detected_points)
     [row_2d, col_2d] = find(detected_points ~= 0);
     sz_data = size(row_2d);
     size_data = sz_data(1);
@@ -16,7 +16,7 @@ function [clusterGrid, R, C] = DBSCAN(velocityAxis, rangeBin, detected_points)
 
     [idx, ~] = dbscan(data, eps, MinPts);
     
-    clusterGrid = zeros(length(rangeBin), length(velocityAxis));
+    clusterGrid = zeros(size(x_axis));
     
     for i = 1:length(data)
         clusterGrid(data(i,2), data(i,1)) = idx(i);
@@ -30,7 +30,7 @@ function [clusterGrid, R, C] = DBSCAN(velocityAxis, rangeBin, detected_points)
     end
 
     %% Finde Center of Each cluster
-    [row_core, col_core] = find(clusterGrid == 1); % index = 1 인 부분
+    [row_core, col_core] = find(clusterGrid ~= 0); % index = 0 아닌  부분
 
         
     if isempty(row_core) || isempty(col_core)
@@ -42,7 +42,7 @@ function [clusterGrid, R, C] = DBSCAN(velocityAxis, rangeBin, detected_points)
     
         row_core_idx = round(centroid_row);
         col_core_idx = round(centroid_col);
-        R = velocityAxis(row_core_idx);
-        C = rangeBin(col_core_idx);
+        R = y_axis(col_core_idx, row_core_idx);
+        C = x_axis(col_core_idx, row_core_idx);
     end
 end

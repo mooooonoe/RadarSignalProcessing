@@ -245,3 +245,15 @@ input = zeros(size(rangeProfileData_mti));
         end
     end
 
+    %% clutter delete
+
+    for cutRIdx = 1:sz_r
+        for cutCIdx = 1:sz_c
+            if(detected_points(cutCIdx, cutRIdx) < 2e5)
+                detected_points(cutCIdx, cutRIdx) = 0;
+            else
+                continue;
+            end
+        end
+    end
+
