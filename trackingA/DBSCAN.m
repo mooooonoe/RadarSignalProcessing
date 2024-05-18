@@ -1,5 +1,6 @@
 function [clusterGrid, R, C] = DBSCAN(y_axis, x_axis, detected_points)
-    [row_2d, col_2d] = find(detected_points ~= 0);
+    maxValue = (max(detected_points(:)))/3*2;
+    [row_2d, col_2d] = find(detected_points > maxValue);
     sz_data = size(row_2d);
     size_data = sz_data(1);
     data = zeros(size_data, 2);
@@ -12,7 +13,7 @@ function [clusterGrid, R, C] = DBSCAN(y_axis, x_axis, detected_points)
     end
     
     eps = 2;
-    MinPts = 10;
+    MinPts = 8;
 
     [idx, ~] = dbscan(data, eps, MinPts);
     
@@ -30,6 +31,7 @@ function [clusterGrid, R, C] = DBSCAN(y_axis, x_axis, detected_points)
     end
 
     %% Finde Center of Each cluster
+    
     [row_core, col_core] = find(clusterGrid ~= 0); % index = 0 아닌  부분
 
         

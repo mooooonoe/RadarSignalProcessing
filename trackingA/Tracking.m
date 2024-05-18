@@ -45,12 +45,7 @@ for frame_n = NoFrameStart:1:NoFrameEnd-1
         chanIdx, max_vel, velocity_resolution, MTIfiltering, radarCubeData_demo, radarCubeData_mti);
     [y_axis, x_axis, mag_data_static, mag_data_dynamic] = FFT_AZIMUTH(range_resolution, ...
         d, minRangeBinKeep, rightRangeBinDiscard, angleFFTSize, doppler);
-    [detected_points_each] = CFAR(frame_n, numrangeBins, rangeProfileData_mti, mag_data_dynamic);
-    if isempty(detected_points_each)
-        clusterGrid = zeros(size(x_axis));
-    else
-        [clusterGrid, R, C] = DBSCAN(y_axis, x_axis, detected_points_each);
-    end
+    
 
     HistoryMap(frame_n, 1) = R;
     HistoryMap(frame_n, 2) = C;

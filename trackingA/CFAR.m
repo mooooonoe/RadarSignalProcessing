@@ -9,8 +9,8 @@ input = zeros(size(rangeProfileData_mti));
     %% CFAR PARAMETER
     input_sz = size(input);
     
-    no_tcell = 20;
-    no_gcell = 2;
+    no_tcell = 40;
+    no_gcell = 10;
     window_sz= no_gcell + no_tcell + 1 ;
    
     % CA INIT

@@ -1,30 +1,23 @@
-close all;
-figure;tiledlayout(1, 2);
+% 저장할 비디오 파일명 및 설정
+outputVideo = VideoWriter('outputVideo.avi'); % 저장할 파일명과 확장자 지정
+outputVideo.FrameRate = 30; % 초당 프레임 수 (30으로 설정하였으나 필요에 따라 조절 가능)
 
-nexttile;
-cart_data_dynamic = flipud((flipud(mag_data_dynamic))');
-%x_axis_cart = -abs(max(rangeBin)):abs(max(rangeBin));
-x_axis_cart = -90.00 : 90.00;
-yaxiscart = 0:abs(max(rangeBin)); 
-y_axis_cart = flipud(yaxiscart');
-imagesc(x_axis_cart, y_axis_cart, car_data_dynamic);
-set(gca, 'YDir', 'normal');
-title('Range Azimuth'); xlabel('angle(degres)'); ylabel('meters(m)');
+% 비디오를 저장할 준비
+open(outputVideo);
 
-nexttile;
-if STATIC_ONLY == 1
-    if log_plot
-        surf(y_axis, x_axis, (mag_data_static).^0.4,'EdgeColor','none');
-    else
-        surf(y_axis, x_axis, abs(mag_data_static),'EdgeColor','none');
-    end
-else
-    if log_plot
-        surf(y_axis, x_axis, (mag_data_dynamic).^0.4,'EdgeColor','none');
-    else
-        surf(y_axis, x_axis, abs(mag_data_dynamic),'EdgeColor','none');
-    end
+% 저장할 행렬 데이터 (예시로 랜덤 데이터 생성)
+numFrames = 100; % 저장할 프레임 수
+frameSize = [200, 300]; % 프레임 크기 (가로 x 세로)
+for frame = 1:numFrames
+    % 행렬 데이터 생성 (예시로 랜덤 데이터 생성)
+    matrixData = rand(frameSize);
+    
+    % 이미지로 변환
+    frameImage = uint8(255 * matrixData); % 데이터를 0에서 255 사이의 값으로 변환
+    
+    % 비디오에 프레임 추가
+    writeVideo(outputVideo, frameImage);
 end
 
-view(2); colorbar;
-title('Cartesian'); xlabel('meters(m)'); ylabel('meters(m)');
+% 비디오 저장 종료
+close(outputVideo);
