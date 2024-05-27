@@ -15,7 +15,7 @@ input = zeros(size(rangeProfileData_mti));
    
     % CA INIT
     th_CA = zeros(input_sz);
-    factor_CA = 0.001;
+    factor_CA = 0.01;
     
     % OS INIT
     th_OS = zeros(input_sz);

@@ -1,5 +1,5 @@
 %% 2D CA-OS CFAR Algorithm
-function [detected_points] = CFAR(frame_n, numrangeBins, rangeProfileData_mti, db_doppler)
+function [detected_points] = CFAR_CART(frame_n, numrangeBins, rangeProfileData_mti, db_doppler)
 input = zeros(size(rangeProfileData_mti));
     
     for n = 1:256
@@ -9,8 +9,8 @@ input = zeros(size(rangeProfileData_mti));
     %% CFAR PARAMETER
     input_sz = size(input);
     
-    no_tcell = 40;
-    no_gcell = 10;
+    no_tcell = 20;
+    no_gcell = 2;
     window_sz= no_gcell + no_tcell + 1 ;
    
     % CA INIT
@@ -50,7 +50,7 @@ input = zeros(size(rangeProfileData_mti));
         detected_points_CA = find(input > th_CA);
         objectCnt_CA = length(detected_points_CA);
 
-        if objectCnt_CA < (numrangeBins/3.5)
+        if objectCnt_CA < (numrangeBins/3)
             break;
         end
 
@@ -114,7 +114,7 @@ input = zeros(size(rangeProfileData_mti));
         detected_points_OS = find(input > th_OS);
         [objectCnt_OS, ~] = size(detected_points_OS);
 
-        if objectCnt_OS < (numrangeBins/3.5)
+        if objectCnt_OS < (numrangeBins/3)
             break;
         end
 
@@ -197,33 +197,52 @@ input = zeros(size(rangeProfileData_mti));
                 size_arr = size(sorted_arr);
                 id = ceil(3*(size_arr(2))/4);
                 value_OS = sorted_arr(id)*factor_OS;
+
+
+                % sum = 0;
+                % cnt_CA = 0;
+                % for i = (Nt/2):-1:1
+                %     if (cutRIdx-i > 0)
+                %         sum = sum + inputOSCA(windowCIdx-i,cutRIdx);
+                %         cnt_CA = cnt_CA+1;
+                %     end
+                % end
+                % for j = 1:(Nt/2)
+                %     if ((cutRIdx+Ng+j) <= 128)
+                %     sum = sum + inputOSCA(windowCIdx+Ng+j,cutRIdx);
+                %     cnt_CA = cnt_CA+1;
+                %     end
+                % end
+                % mean = sum/cnt_CA;
+                % value_CA = mean*factor_CA;
+
             end
+            % 
+            % for windowRIdx = 1:window_sz
+            %     sum = 0;
+            %     cnt_CA = 0;
+            %     for i = (Nt/2):-1:1
+            %         if (cutRIdx-i > 0)
+            %             sum = sum + inputOSCA(cutCIdx, cutRIdx-i);
+            %             cnt_CA = cnt_CA+1;
+            %         end
+            %     end
+            %     for j = 1:(Nt/2)
+            %         if ((cutRIdx+Ng+j) <= 128)
+            %         sum = sum + inputOSCA(cutCIdx, cutRIdx+Ng+j);
+            %         cnt_CA = cnt_CA+1;
+            %         end
+            %     end
+            %     mean = sum/cnt_CA;
+            %     value_CA = mean*factor_CA;
+            % 
+            % end
 
-            for windowRIdx = 1:window_sz
-                sum = 0;
-                cnt_CA = 0;
-                for i = (Nt/2):-1:1
-                    if (cutRIdx-i > 0)
-                        sum = sum + inputOSCA(cutCIdx, cutRIdx-i);
-                        cnt_CA = cnt_CA+1;
-                    end
-                end
-                for j = 1:(Nt/2)
-                    if ((cutRIdx+Ng+j) <= 128)
-                    sum = sum + inputOSCA(cutCIdx, cutRIdx+Ng+j);
-                    cnt_CA = cnt_CA+1;
-                    end
-                end
-                mean = sum/cnt_CA;
-                value_CA = mean*factor_CA;
-
-            end
-
-            if value_CA > value_OS
-                th(cutCIdx, cutRIdx) = value_CA;
-            else
+            %if value_CA > value_OS
+                %th(cutCIdx, cutRIdx) = value_CA;
+            %else
                 th(cutCIdx, cutRIdx) = value_OS;
-            end
+            %end
         end 
     end
 
