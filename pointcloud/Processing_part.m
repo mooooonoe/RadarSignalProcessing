@@ -2,7 +2,7 @@ clear;
 clc;
 close all;
 % load('two_men_radarCube.mat');
-load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_adc_raw_data.mat");
+load('one_man_2_adc_raw_data.mat');
 
 %% parameters
 chirpsIdx=20;
