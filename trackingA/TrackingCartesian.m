@@ -5,7 +5,7 @@ load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_radarCube.mat")
 %% parameters
 
 % Number of Frame
-NoFrameStart = 40;
+NoFrameStart = 120;
 NoFrameEnd = 128;
 
 % MTI parameter

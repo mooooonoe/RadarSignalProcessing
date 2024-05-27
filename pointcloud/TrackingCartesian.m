@@ -37,7 +37,7 @@ figure;
 for frame_n = NoFrameStart:1:NoFrameEnd-1
     tiledlayout(2, 2);
     
-    [frameComplex] = RESHAPE(NChirp, NChan, NSample, frame_n, adcRawData);
+    [frameComplex] = RESHAPE(NChirp, NChan, NSample, Nframe, adcRawData);
     [currChDataQ, currChDataI, t] = FT_TIME(NSample, sampling_time, chirpsIdx, chanIdx, frameComplex);
     [rangeProfileData, radarCubeData_demo, channelData, rangeBin] = FT_RANGE(NChirp, NChan, NSample, ...
         chirpsIdx, chanIdx, numrangeBins, range_resolution, frameComplex);
