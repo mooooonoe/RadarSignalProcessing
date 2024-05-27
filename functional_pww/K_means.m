@@ -1,12 +1,14 @@
 %%  k-means Clustering
-function [detected_points_clustering] = Clustering(NSample,NChirp, k, detected_points_2D)
+function [detected_points_clustering] = K_means(NSample,NChirp, k, detected_points_2D)
 
+% 2D CFAR에서 detect된 point의 idx를 추출함
 [row_2d, col_2d] = find(detected_points_2D ~= 0);
 sz_data = size(row_2d);
 size_data = sz_data(1);
 data = zeros(size_data, 2);
 cnt = 1;
 
+% 수정
 % detect된 target의 data들을 만들어줌. target이 있는 부분은 1, target이 없는 부분은 0  
 for idx_cl = 1:size_data
       data(cnt, 1) = col_2d(idx_cl);
@@ -17,6 +19,7 @@ end
 % k-means Clustering
 [idx, centers] = kmeans(data, k);
 
+% 수정
 % detected_points에 clustering 진행한 결과인 idx 대입
 detected_points_clustering = zeros(NSample,NChirp);
 for cl_idx = 1:size_data

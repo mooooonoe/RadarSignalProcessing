@@ -1,7 +1,8 @@
 %% 2D CA-OS CFAR Algorithm
-function [detected_points_2D] = CAOS_CFAR_2D(sz_r, sz_c, Nt, Ng, scale_factor_2D, db_doppler_mti)
+function [detected_points_2D] = RAM_OS_CFAR_2D(sz_r, sz_c, Nt, Ng, scale_factor_2D, db_doppler_mti)
 % pre allocation
-arr = zeros(1, Nt);
+arr1 = zeros(1, Nt);
+arr2 = zeros(1, Nt);
 detected_points_2D = zeros(size(db_doppler_mti,1),size(db_doppler_mti,2));
 % 2D CFAR processing
 for cutRIdx = 1:sz_r
@@ -9,41 +10,39 @@ for cutRIdx = 1:sz_r
             % OS-CFAR range
             for i = (Nt/2):-1:1
                 if (cutRIdx-i > 0)
-                    arr(1, (Nt/2)-i+1) = db_doppler_mti(cutRIdx-i,cutCIdx);
+                    arr1(1, (Nt/2)-i+1) = db_doppler_mti(cutRIdx-i,cutCIdx);
                 end
             end
             for j = 1:(Nt/2)
                 if ((cutRIdx+Ng+j) <= size(db_doppler_mti,1))
-                    arr(1, (Nt/2)+j) = db_doppler_mti(cutRIdx+Ng+j,cutCIdx);
+                    arr1(1, (Nt/2)+j) = db_doppler_mti(cutRIdx+Ng+j,cutCIdx);
                 end
             end
-            sorted_arr = sort(arr);
-            size_arr = size(sorted_arr);
-            id = ceil(3*(size_arr(2))/4);
-            value_OS = sorted_arr(id)*scale_factor_2D;
+            sorted_arr1 = sort(arr1);
+            size_arr1 = size(sorted_arr1);
+            id1 = ceil(3*(size_arr1(2))/4);
+            value_OS1 = sorted_arr1(id1)*scale_factor_2D;
             
             % CA-CFAR Doppler
-            sum = 0;
-            cnt_CA = 0;
             for i = (Nt/2):-1:1
                 if (cutCIdx-i > 0)
-                    sum = sum + db_doppler_mti(cutRIdx, cutCIdx-i);
-                    cnt_CA = cnt_CA+1;
+                    arr2(1, (Nt/2)-i+1) = db_doppler_mti(cutRIdx, cutCIdx-i);
                 end
             end
             for j = 1:(Nt/2)
                 if ((cutCIdx+Ng+j) <= size(db_doppler_mti,2))
-                   sum = sum + db_doppler_mti(cutRIdx, cutCIdx+Ng+j);
-                   cnt_CA = cnt_CA+1;
+                    arr2(1, (Nt/2)+j) = db_doppler_mti(cutRIdx, cutCIdx+Ng+j);
                 end
             end
-            mean = sum/cnt_CA;
-            value_CA = mean*scale_factor_2D;
+            sorted_arr2 = sort(arr2);
+            size_arr2 = size(sorted_arr2);
+            id2 = ceil(3*(size_arr2(2))/4);
+            value_OS2 = sorted_arr2(id2)*scale_factor_2D;
 
-        if value_CA > value_OS
-            th(cutRIdx, cutCIdx) = value_CA;
+        if value_OS1 > value_OS2
+            th(cutRIdx, cutCIdx) = value_OS1;
         else
-            th(cutRIdx, cutCIdx) = value_OS;
+            th(cutRIdx, cutCIdx) = value_OS2;
         end
     end 
 end

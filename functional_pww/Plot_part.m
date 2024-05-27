@@ -1,10 +1,5 @@
 % Plot part
 close all;
-
-load("Z:\AWR1843\0_u_DopplerMapData\walk\walk_adc_raw_data.mat");
-load("Z:\AWR1843\0_u_DopplerMapData\walk\walk_radarCube.mat");
-
-
 MTIfiltering = 1;
 log_plot = 0;
 dbscan_mode = 1;
