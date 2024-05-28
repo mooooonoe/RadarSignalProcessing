@@ -1,50 +1,107 @@
-clc; close all; clear;
-
 %% Motion-Based Multiple Object Tracking
-% function MotionBasedMultiObjectTrackingExample()
+% This example shows how to perform automatic detection and motion-based
+% tracking of moving objects in a video from a stationary camera.
+%
+%   Copyright 2014 The MathWorks, Inc.
 
+%%
+% Detection of moving objects and motion-based tracking are important 
+% components of many computer vision applications, including activity
+% recognition, traffic monitoring, and automotive safety.  The problem 
+% of motion-based object tracking can be divided into two parts:
+%
+% # Detecting moving objects in each frame 
+% # Associating the detections corresponding to the same object over time
+%
+% The detection of moving objects uses a background subtraction algorithm
+% based on Gaussian mixture models. Morphological operations are applied to
+% the resulting foreground mask to eliminate noise. Finally, blob analysis
+% detects groups of connected pixels, which are likely to correspond to
+% moving objects. 
+%
+% The association of detections to the same object is based solely on
+% motion. The motion of each track is estimated by a Kalman filter. The
+% filter is used to predict the track's location in each frame, and
+% determine the likelihood of each detection being assigned to each 
+% track.
+%
+% Track maintenance becomes an important aspect of this example. In any
+% given frame, some detections may be assigned to tracks, while other
+% detections and tracks may remain unassigned. The assigned tracks are
+% updated using the corresponding detections. The unassigned tracks are 
+% marked invisible. An unassigned detection begins a new track. 
+%
+% Each track keeps count of the number of consecutive frames, where it
+% remained unassigned. If the count exceeds a specified threshold, the
+% example assumes that the object left the field of view and it deletes 
+% the track.  
+%
+% For more information please see
+% <docid:vision_ug#buq9qny-1 Multiple Object Tracking>.
+%
+% This example is a function with the main body at the top and helper
+% routines in the form of nested functions.
+
+function MotionBasedMultiObjectTrackingExample()
+
+% Create System objects used for reading video, detecting moving objects,
+% and displaying the results.
 obj = setupSystemObjects();
-% outputVideo = VideoWriter('tracked_video.avi', 'Uncompressed AVI');
-% outputVideo.FrameRate = obj.reader.FrameRate;
-open(outputVideo);
 
 tracks = initializeTracks(); % Create an empty array of tracks.
+
 nextId = 1; % ID of the next track
 
+% Detect moving objects, and track them across video frames.
 while hasFrame(obj.reader)
     frame = readFrame(obj.reader);
     [centroids, bboxes, mask] = detectObjects(frame);
     predictNewLocationsOfTracks();
     [assignments, unassignedTracks, unassignedDetections] = ...
         detectionToTrackAssignment();
+    
     updateAssignedTracks();
     updateUnassignedTracks();
     deleteLostTracks();
     createNewTracks();
+    
     displayTrackingResults();
-
-    writeVideo(outputVideo, frame);
 end
 
-close(outputVideo);
-
-release(obj.reader);
-release(obj.maskPlayer);
-release(obj.videoPlayer);
 
 %% Create System Objects
+% Create System objects used for reading the video frames, detecting
+% foreground objects, and displaying results.
 
     function obj = setupSystemObjects()
-        obj.reader = VideoReader('RangeAzimuthMap_final.mp4');
+        % Initialize Video I/O
+        % Create objects for reading a video from a file, drawing the tracked
+        % objects in each frame, and playing the video.
         
-         obj.maskPlayer = vision.VideoPlayer('Position', [740, 400, 500, 700]); 
-         obj.videoPlayer = vision.VideoPlayer('Position', [20, 400, 500, 700]); 
-        %obj.maskPlayer = vision.VideoPlayer('Position', [740, 400, 900, 1200]); 
-        %obj.videoPlayer = vision.VideoPlayer('Position', [20, 400, 900, 1200]); 
+        % Create a video reader.
+        obj.reader = VideoReader('RangeAzimuthMap_final_v3.mp4');
+        
+        % Create two video players, one to display the video,
+        % and one to display the foreground mask.
+        % obj.maskPlayer = vision.VideoPlayer('Position', [740, 400, 700, 400]);
+        % obj.videoPlayer = vision.VideoPlayer('Position', [20, 400, 700, 400]);
+        obj.maskPlayer = vision.VideoPlayer('Position', [740, 400, 700, 1000]); % 4:5 비율
+        obj.videoPlayer = vision.VideoPlayer('Position', [20, 400, 700, 1000]); % 4:5 비율
+        
+        % Create System objects for foreground detection and blob analysis
+        
+        % The foreground detector is used to segment moving objects from
+        % the background. It outputs a binary mask, where the pixel value
+        % of 1 corresponds to the foreground and the value of 0 corresponds
+        % to the background. 
         
         obj.detector = vision.ForegroundDetector('NumGaussians', 3, ...
             'NumTrainingFrames', 40, 'MinimumBackgroundRatio', 0.7);
         
+        % Connected groups of foreground pixels are likely to correspond to moving
+        % objects.  The blob analysis System object is used to find such groups
+        % (called 'blobs' or 'connected components'), and compute their
+        % characteristics, such as area, centroid, and the bounding box.
         
         obj.blobAnalyser = vision.BlobAnalysis('BoundingBoxOutputPort', true, ...
             'AreaOutputPort', true, 'CentroidOutputPort', true, ...
@@ -85,6 +142,7 @@ release(obj.videoPlayer);
 % frames.        
 
     function tracks = initializeTracks()
+        % create an empty array of tracks
         tracks = struct(...
             'id', {}, ...
             'bbox', {}, ...
@@ -95,16 +153,33 @@ release(obj.videoPlayer);
     end
 
 %% Detect Objects
+% The |detectObjects| function returns the centroids and the bounding boxes
+% of the detected objects. It also returns the binary mask, which has the 
+% same size as the input frame. Pixels with a value of 1 correspond to the
+% foreground, and pixels with a value of 0 correspond to the background.   
+%
+% The function performs motion segmentation using the foreground detector. 
+% It then performs morphological operations on the resulting binary mask to
+% remove noisy pixels and to fill the holes in the remaining blobs.  
+
     function [centroids, bboxes, mask] = detectObjects(frame)
+        
+        % Detect foreground.
         mask = obj.detector.step(frame);
+        
+        % Apply morphological operations to remove noise and fill in holes.
         mask = imopen(mask, strel('rectangle', [3,3]));
         mask = imclose(mask, strel('rectangle', [15, 15])); 
         mask = imfill(mask, 'holes');
-
+        
+        % Perform blob analysis to find connected components.
         [~, centroids, bboxes] = obj.blobAnalyser.step(mask);
     end
 
 %% Predict New Locations of Existing Tracks
+% Use the Kalman filter to predict the centroid of each track in the
+% current frame, and update its bounding box accordingly.
+
     function predictNewLocationsOfTracks()
         for i = 1:length(tracks)
             bbox = tracks(i).bbox;
@@ -328,4 +403,23 @@ release(obj.videoPlayer);
         obj.maskPlayer.step(mask);        
         obj.videoPlayer.step(frame);
     end
-%end
+
+%% Summary
+% This example created a motion-based system for detecting and
+% tracking multiple moving objects. Try using a different video to see if
+% you are able to detect and track objects. Try modifying the parameters
+% for the detection, assignment, and deletion steps.  
+%
+% The tracking in this example was solely based on motion with the
+% assumption that all objects move in a straight line with constant speed.
+% When the motion of an object significantly deviates from this model, the
+% example may produce tracking errors. Notice the mistake in tracking the
+% person labeled #12, when he is occluded by the tree. 
+%
+% The likelihood of tracking errors can be reduced by using a more complex
+% motion model, such as constant acceleration, or by using multiple Kalman
+% filters for every object. Also, you can incorporate other cues for
+% associating detections over time, such as size, shape, and color. 
+
+
+end
