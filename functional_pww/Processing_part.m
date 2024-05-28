@@ -7,7 +7,7 @@ load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_adc_raw_data.ma
 %% parameters
 chirpsIdx=20;
 chanIdx=1;
-frame_number=120;
+frame_number=118;
 
 numrangeBins=256;
 NChirp=128;
@@ -60,15 +60,15 @@ object_number = 2;
 % CAOS_CFAR_2D parameter
 Nt = 24;                 % # of training window
 Ng = 8;                  % # of guard window
-scale_factor_2D = 1.24;  % threshold scale factor 1.25
+scale_factor_2D = 1.08;  % threshold scale factor 1.25
 
 Nt_static = 48;          % # of training window
 Ng_static = 64;          % # of guard window
-scale_factor_2D_static = 1.085; % threshold scale factor 1.25
+scale_factor_2D_static = 1.01; % threshold scale factor 1.25
 
 % FindPeakValue parameter
 minPeakHeight = 10;
-peak_th = 0.4;
+peak_th = 0.6;
 
 % Clustering parameter
 dbscan_mode = 1;
@@ -76,7 +76,7 @@ dbscan_mode = 1;
    k = 2;
   % DBSCAN
    eps = 2.5;
-   MinPts = 6; 
+   MinPts = 10; 
    eps_static = 2.5;
    MinPts_static = 5; 
 
@@ -84,7 +84,7 @@ dbscan_mode = 1;
 RangeBinIdx = 22;
 
 % Range Azimuth Map 2D CA-CFAR parameter
-scale_factor_2D_ram = 1.07;
+scale_factor_2D_ram = 1.08;
 
 %% Reshape Data
 [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);
@@ -230,3 +230,91 @@ x_min = -max_range;
 x_max = max_range;
 y_min = 0;
 y_max = max_range;
+
+%% Plot part
+close all;
+MTIfiltering = 1;
+log_plot = 0;
+dbscan_mode = 1;
+
+%% 2D RDM CA-OS CFAR plot
+% plot 2D CAOS-CFAR
+figure('Position', [300,100, 1200, 800]);
+tiledlayout(2,2);
+
+
+%% Range Doppler FFT plot - RDM
+% plot Range Doppler Map
+nexttile;
+if MTIfiltering
+    imagesc(velocityAxis,rangeBin,db_doppler_mti);
+    title('Range-Doppler Map (MTI)');
+else
+    imagesc(velocityAxis,rangeBin,db_doppler);
+    title('Range-Doppler Map (not MTI)');
+end
+xlabel('Velocity (m/s)');
+ylabel('Range (m)');
+% yticks(0:2:max(rangeBin));
+colorbar;
+axis xy
+
+%% RDM CFAR
+nexttile;
+if MTIfiltering
+    imagesc(velocityAxis,rangeBin,detected_points_2D);
+    title('RDM 2D CFAR Target Detect (MTI)');
+else
+    imagesc(velocityAxis,rangeBin,detected_points_2D_static);
+    title('RDM 2D CFAR Target Detect (not MTI)');
+end
+xlabel('Velocity (m/s)');
+ylabel('Range (m)');
+yticks(0:2:max(rangeBin));
+colorbar;
+axis xy
+
+%% Clustering plot
+nexttile;
+% plot DBSCAN clustering
+if dbscan_mode
+    if MTIfiltering
+       imagesc(velocityAxis, rangeBin, clusterGrid);
+       title('DBSCAN Clustering (MTI)');
+    else
+       imagesc(velocityAxis, rangeBin, clusterGrid_static);
+       title('DBSCAN Clustering (not MTI)');
+    end
+% Plot K-means Clustering
+else 
+    imagesc(velocityAxis,rangeBin,detected_points_clustering);
+    title('K-means Clustering');
+end
+xlabel('Velocity (m/s)');
+ylabel('Range (m)');
+yticks(0:2:max(rangeBin));
+axis xy
+colorbar;
+
+%% Detection & Angle estimation Results plot
+nexttile;
+hold on;
+% dynamic target position plot
+plot(target_x_dynamic, target_y_dynamic, 'bo', 'MarkerFaceColor', 'b', 'MarkerSize', 5);
+hold on;
+% static target position plot
+plot(target_x_static, target_y_static, 'go', 'MarkerFaceColor', 'g', 'MarkerSize', 5);
+% radar position plot
+hold on;
+plot(0, 0, '^', 'MarkerFaceColor', 'r', 'MarkerSize', 5);
+
+% plot 범위 설정
+axis([x_min, x_max, y_min, y_max]);
+xlabel('X (m)');
+ylabel('Y (m)');
+title('Detection & Angle estimation Results');
+grid on;
+hold off;
+% yticks(0:2:max_range);
+% xticks(-max_range:2:max_range);
+
