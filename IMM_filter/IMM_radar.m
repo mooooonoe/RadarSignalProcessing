@@ -1,79 +1,41 @@
-% MATLAB code to integrate provided data for tracking maneuvering targets
+clear; clc; close all;
 
-% Define the scenario
-t = linspace(0, 2*pi, 100);
+load('x_radar_oneman.mat'); load('y_radar_oneman.mat');
+t = linspace(0, 2*pi, length(x_radar));
 dt = t(2) - t(1);
 
-% Position
-x = 2*cos(t);
-y = sin(2*t);
+% 튀는 값 제거
+mean_x = mean(x_radar);
+std_x = std(x_radar);
+mean_y = mean(y_radar);
+std_y = std(y_radar);
 
-% Velocity
-dxdt = -2*sin(t);
-dydt = 2*cos(2*t);
+threshold = 1; % 3 표준편차를 기준으로 이상치 제거
+valid_indices = abs(x_radar - mean_x) < threshold * std_x & abs(y_radar - mean_y) < threshold * std_y;
 
-% Acceleration
-d2xdt2 = -2*cos(t);
-d2ydt2 = -4*sin(2*t);
-
-% Angular speed (scalar)
-omega = (dxdt .* d2ydt2 - dydt .* d2xdt2) ./ (dxdt.^2 + dydt.^2);
-
-% Speed (scalar)
-speed = sqrt(dxdt.^2 + dydt.^2);
-
-% Measurement error
-gps_sig = 0.1;
-omega_sig = 0.3;
-speed_sig = 0.1;
-
-% Noisy measurements
-x_gps = x + gps_sig * randn(size(x));
-y_gps = y + gps_sig * randn(size(y));
-omega_sens = omega + omega_sig * randn(size(omega));
-speed_sens = speed + speed_sig * randn(size(speed));
+x_radar_filtered = x_radar(valid_indices);
+y_radar_filtered = y_radar(valid_indices);
 
 % Plotting the position
 figure;
 subplot(2, 1, 1);
-plot(x, y, 'DisplayName', 'True position'); hold on;
-scatter(x_gps, y_gps, 5, 'red', 'filled', 'DisplayName', 'GPS measurements');
+scatter(x_radar_filtered, y_radar_filtered, 5, 'red', 'filled', 'DisplayName', 'Radar detected');
 xlabel('x');
 ylabel('y');
 title('Position');
 legend;
 hold on;
 
-% % Plotting the angular speed
-% subplot(2,2,2);
-% plot(t, omega, 'DisplayName', 'True angular speed'); hold on;
-% scatter(t, omega_sens, 5, 'red', 'filled', 'DisplayName', 'Measured angular speed');
-% xlabel('Time');
-% ylabel('Angular Speed');
-% title('Angular Speed');
-% legend;
-% 
-% % Plotting the speed
-% subplot(2,2,3);
-% plot(t, speed, 'DisplayName', 'True speed'); hold on;
-% scatter(t, speed_sens, 5, 'red', 'filled', 'DisplayName', 'Measured speed');
-% xlabel('Time');
-% ylabel('Speed');
-% title('Speed');
-% legend;
-
 % Adjust layout
-sgtitle('Position, Angular Speed, and Speed');
+sgtitle('IMM filter Tracking ');
 set(gcf, 'Position', [100, 100, 800, 600]);
 
-% Integrate generated data into tracking filters
-
 % Define measurements to be the position with noise
-measPos = [x_gps; y_gps; zeros(size(x_gps))];
+measPos = [x_radar_filtered; y_radar_filtered; zeros(size(x_radar_filtered))];
 
 % Define the initial state and covariance
 positionSelector = [1 0 0 0 0 0; 0 0 1 0 0 0; 0 0 0 0 1 0]; % Position from state
-initialState = positionSelector' * measPos(:,1);
+initialState = [x_radar_filtered(1); 0; y_radar_filtered(1); 0; 0; 0]; % First measurement as initial state
 initialCovariance = diag([1, 1e4, 1, 1e4, 1, 1e4]); % Velocity is not measured
 
 % Create a constant-velocity trackingEKF
@@ -85,7 +47,7 @@ cvekf = trackingEKF(@constvel, @cvmeas, initialState, ...
     'ProcessNoise', eye(3));
 
 % Track using the constant-velocity filter
-numSteps = numel(t);
+numSteps = numel(x_radar_filtered);
 dist = zeros(1, numSteps);
 estPos = zeros(3, numSteps);
 for i = 2:numSteps
@@ -95,7 +57,7 @@ for i = 2:numSteps
 end
 hold on;
 subplot(2, 1, 1);
-plot(estPos(1,:), estPos(2,:), '.g', 'DisplayName', 'CV Low PN');
+plot(estPos(1,:), estPos(2,:), '-g', 'DisplayName', 'CV Low PN');
 title('True and Estimated Positions with CV Filter');
 axis equal;
 legend;
@@ -126,7 +88,7 @@ for i = 2:numSteps
 end
 hold on;
 subplot(2, 1, 1);
-plot(estPos(1,:), estPos(2,:), '.c', 'DisplayName', 'CV High PN');
+plot(estPos(1,:), estPos(2,:), '-c', 'DisplayName', 'CV High PN');
 title('True and Estimated Positions with Increased Process Noise');
 axis equal;
 legend;
@@ -157,7 +119,7 @@ for i = 2:numSteps
 end
 hold on;
 subplot(2, 1, 1);
-plot(estPos(1,:), estPos(2,:), '.m', 'DisplayName', 'IMM');
+plot(estPos(1,:), estPos(2,:), '-m', 'DisplayName', 'IMM');
 title('True and Estimated Positions with IMM Filter');
 axis equal;
 legend;

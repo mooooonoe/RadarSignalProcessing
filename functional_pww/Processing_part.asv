@@ -7,7 +7,7 @@ load("X:\Personals\Subin_Moon\Radar\0_MovingData\OneMan\oneman_RAW.mat");
 %% parameters
 chirpsIdx=20;
 chanIdx=1;
-%frame_number=120;
+%frame_number=122;
 
 numrangeBins=256;
 NChirp=128;
@@ -60,7 +60,7 @@ object_number = 2;
 % CAOS_CFAR_2D parameter
 Nt = 24;                 % # of training window
 Ng = 8;                  % # of guard window
-scale_factor_2D = 1.15;  % threshold scale factor 1.25
+scale_factor_2D = 1.08;  % threshold scale factor 1.25
 
 Nt_static = 48;          % # of training window
 Ng_static = 64;          % # of guard window
@@ -86,9 +86,8 @@ RangeBinIdx = 22;
 % Range Azimuth Map 2D CA-CFAR parameter
 scale_factor_2D_ram = 1.08;
 
-cnt = 0;
-for frame_number = 120:256
-    cnt = cnt + 1;
+for frame_number = 1:256
+    
     %% Reshape Data
     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);
     
@@ -320,10 +319,4 @@ for frame_number = 120:256
     hold off;
     % yticks(0:2:max_range);
     % xticks(-max_range:2:max_range);
-    
-    drawnow;
-    
-    x_radar(:,cnt) = target_x_dynamic(1);
-    y_radar(:,cnt) = target_y_dynamic(1);
-    
-end
+
