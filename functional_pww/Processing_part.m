@@ -87,7 +87,7 @@ RangeBinIdx = 22;
 scale_factor_2D_ram = 1.08;
 
 cnt = 0;
-for frame_number = 2:256
+for frame_number = 50:256
     cnt = cnt + 1;
     %% Reshape Data
     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);
@@ -126,9 +126,9 @@ for frame_number = 2:256
     [detected_points_2D_static] = OS_CFAR_2D_static(NSample, NChirp, Nt_static, Ng_static, scale_factor_2D_static, db_doppler);
     
     %% Clustering
-    % K-means
-    [detected_points_clustering] = K_means(NSample,NChirp, k, detected_points_2D);
-    
+    % % K-means
+    % [detected_points_clustering] = K_means(NSample,NChirp, k, detected_points_2D);
+    % 
     % DBSCAN
      % MTI
     [clusterGrid, idx_db_doppler, corepts] = DBSCAN(eps, MinPts, NSample, NChirp, detected_points_2D, db_doppler_mti);
@@ -200,6 +200,11 @@ for frame_number = 2:256
     else 
     % deecting된 target이 있는 경우 
     %% detecting for point cloud
+    % Error Management:
+    if isempty(objOut_dynamic) 
+        continue;
+    end
+    
     % dynamic data
     Resel_agl_deg_dynamic = angleBin(1, Resel_agl_dynamic);
     Resel_vel_dynamic = velocityAxis(1, objOut_dynamic(1,:));
@@ -207,12 +212,17 @@ for frame_number = 2:256
     
     save_det_data_dynamic = [objOut_dynamic(2,:)', objOut_dynamic(1,:)', Resel_agl_dynamic', objOut_dynamic(3,:)', ...
     Resel_rng_dynamic', Resel_vel_dynamic', Resel_agl_deg_dynamic'];
-    
+
+    % Error Management:
+    if isempty(objOut_static) 
+        continue;
+    end
+
     % static data
     Resel_agl_deg_static = angleBin(1, Resel_agl_static);
     Resel_vel_static = velocityAxis(1, objOut_static(1,:));
     Resel_rng_static = rangeBin(1, objOut_static(2,:));
-    
+
     save_det_data_static = [objOut_static(2,:)', objOut_static(1,:)', Resel_agl_static', objOut_static(3,:)', ...
     Resel_rng_static', Resel_vel_static', Resel_agl_deg_static'];
     
@@ -323,6 +333,10 @@ for frame_number = 2:256
     
     drawnow;
     
+    if isempty(target_x_dynamic)
+        continue;
+    end
+
     x_radar(:,cnt) = target_x_dynamic(1);
     y_radar(:,cnt) = target_y_dynamic(1);
     
