@@ -1,5 +1,6 @@
 clear; clc; close all;
 
+% 데이터 로드
 load('x_radar_eight_walking.mat'); load('y_radar_eight_walking.mat');
 t = linspace(0, 2*pi, length(x_radar));
 dt = t(2) - t(1);
@@ -16,7 +17,6 @@ valid_indices = abs(x_radar - mean_x) < threshold * std_x & abs(y_radar - mean_y
 x_radar_filtered = x_radar(valid_indices);
 y_radar_filtered = y_radar(valid_indices);
 
-
 % Plotting the position
 figure;
 scatter(x_radar_filtered, y_radar_filtered, 5, 'red', 'filled', 'DisplayName', 'Radar detected');
@@ -25,10 +25,6 @@ ylabel('y');
 title('Position');
 legend;
 hold on;
-
-% Adjust layout
-%sgtitle('IMM filter Tracking ');
-set(gcf, 'Position', [100, 100, 800, 600]);
 
 % Define measurements to be the position with noise
 measPos = [x_radar_filtered; y_radar_filtered; zeros(size(x_radar_filtered))];
@@ -103,53 +99,34 @@ title('True and Estimated Positions with IMM Filter');
 axis equal;
 legend;
 
-
-%% Micro doppler
-NChirp=128; NChan=4; NSample=256; Nframe = 256;   
-load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
-
-% RangeBinIdx = 22;
-% 
-% 
-% for frame_number = 50:256
-%     cnt = cnt + 1;
-% 
-%     % Reshape Data
-%     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);    
-%     % Time domain output
-%     [currChDataQ, currChDataI, t] = TimeDomainOutput(NSample, sampling_time, chirpsIdx, chanIdx, frame_number, frameComplex_cell);    
-%     % FFT Range Profile
-%     [rangeProfileData, radarCubeData_cell, channelData, rangeBin] = RangeFFT(NChirp, NChan, NSample, Nframe, ...
-%         chirpsIdx, chanIdx, numrangeBins, range_resolution, frame_number, frameComplex_cell);    
-%     % MTI filter
-%     [radarCubeData_mti_cell, rangeProfileData_mti, channelData_mti] = MTI_filter(NChirp, NChan, NSample, Nframe,...
-%         chirpsIdx, chanIdx, frame_number,radarCubeData_cell);
-%     % Micro doppler
-%     [time_axis, micro_doppler_mti, micro_doppler] = microdoppler(NChirp, NChan, Nframe, RangeBinIdx, radarCubeData_mti_cell, radarCubeData_cell);
-% 
-% 
-% 
-% end
-
-%% tracking frame update 
-
+% tracking frame update
 figure();
 plot(estPos(1,:), estPos(2,:), '-m', 'LineWidth', 1.5);
 
+% 비디오 파일 경로
+videoFilePath = 'human_eight.mp4';
+videoReader = VideoReader(videoFilePath);
+
+% 비디오 재생을 위한 타이머 설정
+videoTimer = timer('TimerFcn', @(~,~)playVideoFrame(videoReader), 'ExecutionMode', 'fixedRate', 'Period', 1/(3*videoReader.FrameRate));
+
+start(videoTimer); % 비디오 재생 시작
 
 for value = 1: length(estPos)
     updatePlot(value, estPos, x_radar_filtered, y_radar_filtered);
-    pause(0.002);
+    pause(0.002); % 플롯 업데이트 속도 조절
 end
+
+stop(videoTimer); % 비디오 재생 정지
+delete(videoTimer); % 타이머 객체 삭제
 
 function updatePlot(value, estPos, x_radar_filtered, y_radar_filtered)
-        plotestPos(value, estPos); 
-        hold on;
-        plotsensorVal(value, x_radar_filtered, y_radar_filtered);
-        hold off;
-        drawnow;
+    plotestPos(value, estPos); 
+    hold on;
+    plotsensorVal(value, x_radar_filtered, y_radar_filtered);
+    hold off;
+    drawnow;
 end
-
 
 function plotestPos(value, estPos)
     plot(estPos(1,value), estPos(2,value), '.m', 'LineWidth', 3);
@@ -167,4 +144,12 @@ function plotsensorVal(value, x_radar_filtered, y_radar_filtered)
     xlabel('X (m)');
     ylabel('Y (m)');
     title('IMM Filtering');
+end
+
+function playVideoFrame(videoReader)
+    if hasFrame(videoReader)
+        frame = readFrame(videoReader);
+        imshow(frame);
+        drawnow;
+    end
 end

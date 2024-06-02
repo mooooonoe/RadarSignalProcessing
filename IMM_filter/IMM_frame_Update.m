@@ -104,33 +104,6 @@ axis equal;
 legend;
 
 
-%% Micro doppler
-NChirp=128; NChan=4; NSample=256; Nframe = 256;   
-load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
-
-% RangeBinIdx = 22;
-% 
-% 
-% for frame_number = 50:256
-%     cnt = cnt + 1;
-% 
-%     % Reshape Data
-%     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);    
-%     % Time domain output
-%     [currChDataQ, currChDataI, t] = TimeDomainOutput(NSample, sampling_time, chirpsIdx, chanIdx, frame_number, frameComplex_cell);    
-%     % FFT Range Profile
-%     [rangeProfileData, radarCubeData_cell, channelData, rangeBin] = RangeFFT(NChirp, NChan, NSample, Nframe, ...
-%         chirpsIdx, chanIdx, numrangeBins, range_resolution, frame_number, frameComplex_cell);    
-%     % MTI filter
-%     [radarCubeData_mti_cell, rangeProfileData_mti, channelData_mti] = MTI_filter(NChirp, NChan, NSample, Nframe,...
-%         chirpsIdx, chanIdx, frame_number,radarCubeData_cell);
-%     % Micro doppler
-%     [time_axis, micro_doppler_mti, micro_doppler] = microdoppler(NChirp, NChan, Nframe, RangeBinIdx, radarCubeData_mti_cell, radarCubeData_cell);
-% 
-% 
-% 
-% end
-
 %% tracking frame update 
 
 figure();
@@ -168,3 +141,4 @@ function plotsensorVal(value, x_radar_filtered, y_radar_filtered)
     ylabel('Y (m)');
     title('IMM Filtering');
 end
+
