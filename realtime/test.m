@@ -1,18 +1,108 @@
-% 주어진 좌표 배열
-arr = [5,1; 2,3; 6,2];
+all_frames_ADC_buffer = {};
+all_frames_CP_buffer = {};
+all_frames_CQ1_buffer = {};
+all_frames_CQ2_buffer = {};
 
-% 새로운 그래프 창을 엽니다.
-figure;
+chirpMode = CFG_PARAMS.chirpMode;
+numRxChan = CFG_PARAMS.numRxChan;
 
-% 좌표를 플롯합니다. ':' 연산자를 사용하여 모든 행을 선택하고, 각 열을 x와 y 좌표로 사용합니다.
-plot(arr(:, 1), arr(:, 2), 'o');
+return_value = TC_PASS;
+frameIdx = 0;
 
-% 축에 그리드를 추가합니다.
-grid on;
+while true
+    % disp(['****** HW session Frame ', num2str(frameIdx), ' ******']);
+    % disp(['frameIdx = ', num2str(floor(frameIdx / numSubframes))]);
+    % 
+    % subframeIdx = subframeIdx_buf(mod(frameIdx, numSubframes) + 1);
+    % disp(['subframeIdx = ', num2str(subframeIdx)]);
 
-% 축 이름을 설정합니다.
-xlabel('X coordinate');
-ylabel('Y coordinate');
+    frame_ADC_buffer = {};
+    frame_CP_buffer = {};
+    frame_CQ1_buffer = {};
+    frame_CQ2_buffer = {};
 
-% 그래프에 타이틀을 추가합니다.
-title('Plot of points');
+    % Get current frame's parameters
+    numAdcSamples = numAdcSamples_buf(subframeIdx);
+    profileIdx = profileIdx_buf(subframeIdx);
+    numChirpPerFrame = numLoops_buf(subframeIdx) * numOfChirps_buf(subframeIdx);
+
+    CFG_PARAMS.headerEn = lvdsCfg_headerEn_buf(subframeIdx);
+    CFG_PARAMS.dataFmt = lvdsCfg_dataFmt_buf(subframeIdx);
+
+    if lvdsCfg_dataFmt_buf(subframeIdx) == 4
+        SigImgNumSlices = SigImgNumSlices_buf(subframeIdx);
+        RxSatNumSlices = RxSatNumSlices_buf(subframeIdx);
+    end
+
+    for groupIdx = 1:(numChirpPerFrame / chirpMode)
+        if lvdsCfg_headerEn_buf(subframeIdx) == 1
+            get_hsi_header(fp);
+            return_value = return_value + verify_hsi_header_hw(numAdcSamples, ID);
+        end
+
+        chirp_ADC_buffer = {};
+        chirp_CP_buffer = {};
+        chirp_CQ1_buffer = {};
+        chirp_CQ2_buffer = {};
+
+        if lvdsCfg_dataFmt_buf(subframeIdx) == 1  % ADC data format
+            for idx = 1:(numRxChan * chirpMode)
+                ADC_buffer = get_ADC(fp, numAdcSamples, CFG_PARAMS.dataSize);
+                chirp_ADC_buffer{end+1} = ADC_buffer;
+            end
+        end
+
+        if lvdsCfg_dataFmt_buf(subframeIdx) == 4  % CP+ADC+CQ data format
+            for chirpIdx = 1:chirpMode
+                for chanIdx = 1:numRxChan
+                    [CP_verify_result, CP_buffer] = get_verify_CP(fp, (profileIdx * 4) + chanIdx_buf(chanIdx), (groupIdx - 1) * chirpMode + chirpIdx);
+                    return_value = return_value + CP_verify_result;
+                    chirp_CP_buffer{end+1} = CP_buffer;
+                end
+
+                for idx = 1:(numRxChan * chirpMode)
+                    ADC_buffer = get_ADC(fp, numAdcSamples, CFG_PARAMS.dataSize);
+                    chirp_ADC_buffer{end+1} = ADC_buffer;
+                end
+
+                [CQ_verify_result, CQ1_buffer, CQ2_buffer] = get_verify_CQ(fp, SigImgNumSlices, RxSatNumSlices);
+                return_value = return_value + CQ_verify_result;
+                chirp_CQ1_buffer{end+1} = CQ1_buffer;
+                chirp_CQ2_buffer{end+1} = CQ2_buffer;
+            end
+        end
+
+        frame_ADC_buffer{end+1} = chirp_ADC_buffer;
+        frame_CP_buffer{end+1} = chirp_CP_buffer;
+        frame_CQ1_buffer{end+1} = chirp_CQ1_buffer;
+        frame_CQ2_buffer{end+1} = chirp_CQ2_buffer;
+    end
+
+    all_frames_ADC_buffer{end+1} = frame_ADC_buffer;
+    all_frames_CP_buffer{end+1} = frame_CP_buffer;
+    all_frames_CQ1_buffer{end+1} = frame_CQ1_buffer;
+    all_frames_CQ2_buffer{end+1} = frame_CQ2_buffer;
+
+    pos = ftell(fp);
+    if frameIdx == 0
+        numBytesPerFrame = pos;
+    end
+    disp(['Frame ', num2str(frameIdx), ' end at file location: ', num2str(pos)]);
+
+    if pos + numBytesPerFrame > numBytesCaptured
+        break;
+    end
+
+    frameIdx = frameIdx + 1;
+end
+
+fclose(fp);
+
+disp([capturedFileName, ' contains ', num2str(numBytesCaptured), ' bytes. ', num2str(pos), ' bytes/', num2str(frameIdx), ' frames have been parsed.']);
+
+if return_value == TC_PASS
+    disp('Captured file is correct!');
+else
+    return_value = TC_FAIL;
+    disp('Captured file has errors!');
+end

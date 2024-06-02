@@ -557,7 +557,7 @@ def read_config (config_file_name):
     global CC9_file_subframeIdx_buf
     global CC9_file_sessionFlag
 
-    config = open(config_file_name,'r')
+    config = open('xwr16xx.cfg','r')
 
     for line in config:
         print("**** line from config file: \n" + line)
