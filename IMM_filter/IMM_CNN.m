@@ -16,9 +16,9 @@ valid_indices = abs(x_radar - mean_x) < threshold * std_x & abs(y_radar - mean_y
 x_radar_filtered = x_radar(valid_indices);
 y_radar_filtered = y_radar(valid_indices);
 
-
 % Plotting the position
 figure;
+subplot(2, 1, 1);
 scatter(x_radar_filtered, y_radar_filtered, 5, 'red', 'filled', 'DisplayName', 'Radar detected');
 xlabel('x');
 ylabel('y');
@@ -27,7 +27,7 @@ legend;
 hold on;
 
 % Adjust layout
-%sgtitle('IMM filter Tracking ');
+sgtitle('IMM filter Tracking ');
 set(gcf, 'Position', [100, 100, 800, 600]);
 
 % Define measurements to be the position with noise
@@ -56,9 +56,19 @@ for i = 2:numSteps
     estPos(:,i) = positionSelector * correct(cvekf, measPos(:,i));
 end
 hold on;
+subplot(2, 1, 1);
 plot(estPos(1,:), estPos(2,:), '-g', 'DisplayName', 'CV Low PN');
 title('True and Estimated Positions with CV Filter');
 axis equal;
+legend;
+
+% Plot normalized distance
+hold on;
+subplot(2, 1, 2);
+plot((1:numSteps)*dt, dist, 'g', 'DisplayName', 'CV Low PN');
+title('Normalized Distance from Estimated Position to True Position');
+xlabel('Time (s)');
+ylabel('Normalized Distance');
 legend;
 
 % Increase the process noise for the constant-velocity filter
@@ -77,9 +87,19 @@ for i = 2:numSteps
     estPos(:,i) = positionSelector * correct(cvekf2, measPos(:,i));
 end
 hold on;
+subplot(2, 1, 1);
 plot(estPos(1,:), estPos(2,:), '-c', 'DisplayName', 'CV High PN');
 title('True and Estimated Positions with Increased Process Noise');
 axis equal;
+legend;
+
+% Plot normalized distance
+hold on;
+subplot(2, 1, 2);
+plot((1:numSteps)*dt, dist, 'c', 'DisplayName', 'CV High PN');
+title('Normalized Distance from Estimated Position to True Position');
+xlabel('Time (s)');
+ylabel('Normalized Distance');
 legend;
 
 % Use an interacting multiple-model (IMM) filter
@@ -98,60 +118,25 @@ for i = 2:numSteps
     modelProbs(:,i) = imm.ModelProbabilities;
 end
 hold on;
+subplot(2, 1, 1);
 plot(estPos(1,:), estPos(2,:), '-m', 'DisplayName', 'IMM');
 title('True and Estimated Positions with IMM Filter');
 axis equal;
 legend;
 
+% Plot normalized distance
+hold on;
+subplot(2, 1, 2);
+plot((1:numSteps)*dt, dist, 'm', 'DisplayName', 'IMM');
+title('Normalized Distance from Estimated Position to True Position');
+xlabel('Time (s)');
+ylabel('Normalized Distance');
+legend;
 
-%% Micro doppler
-NChirp=128; NChan=4; NSample=256; Nframe = 256;   
-load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
-
-% RangeBinIdx = 22;
-% 
-% 
-% for frame_number = 50:256
-%     cnt = cnt + 1;
-% 
-%     % Reshape Data
-%     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);    
-%     % Time domain output
-%     [currChDataQ, currChDataI, t] = TimeDomainOutput(NSample, sampling_time, chirpsIdx, chanIdx, frame_number, frameComplex_cell);    
-%     % FFT Range Profile
-%     [rangeProfileData, radarCubeData_cell, channelData, rangeBin] = RangeFFT(NChirp, NChan, NSample, Nframe, ...
-%         chirpsIdx, chanIdx, numrangeBins, range_resolution, frame_number, frameComplex_cell);    
-%     % MTI filter
-%     [radarCubeData_mti_cell, rangeProfileData_mti, channelData_mti] = MTI_filter(NChirp, NChan, NSample, Nframe,...
-%         chirpsIdx, chanIdx, frame_number,radarCubeData_cell);
-%     % Micro doppler
-%     [time_axis, micro_doppler_mti, micro_doppler] = microdoppler(NChirp, NChan, Nframe, RangeBinIdx, radarCubeData_mti_cell, radarCubeData_cell);
-% 
-% 
-% 
-% end
-
-%% tracking frame update 
-
-figure();
-plot(estPos(1,:), estPos(2,:), '-m', 'LineWidth', 1.5);
-
-
-for value = 1: length(estPos)
-    updatePlot(value);
-    pause(0.001);
-end
-
-function updatePlot(value)
-        plotestPos(value, estPos); 
-        drawnow;
-end
-
-
-function plotestPos(value, estPos)
-    plot(estPos(1,value), estPos(2,value), '.m', 'LineWidth', 1.5);
-   
-    xlabel('X (m)');
-    ylabel('Y (m)');
-    title('IMM Filtering');
-end
+% Plot model probabilities
+figure;
+plot((1:numSteps)*dt, modelProbs);
+title('Model Probabilities vs. Time');
+xlabel('Time (s)');
+ylabel('Model Probabilities');
+legend('IMM-CV', 'IMM-CA', 'IMM-CT');

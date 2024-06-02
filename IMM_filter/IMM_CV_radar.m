@@ -10,7 +10,7 @@ std_x = std(x_radar);
 mean_y = mean(y_radar);
 std_y = std(y_radar);
 
-threshold = 2; % 3 표준편차를 기준으로 이상치 제거
+threshold = 2; % 2 표준편차를 기준으로 이상치 제거
 valid_indices = abs(x_radar - mean_x) < threshold * std_x & abs(y_radar - mean_y) < threshold * std_y;
 
 x_radar_filtered = x_radar(valid_indices);

@@ -138,11 +138,11 @@ plot(estPos(1,:), estPos(2,:), '-m', 'LineWidth', 1.5);
 
 
 for value = 1: length(estPos)
-    updatePlot(value);
-    pause(0.001);
+    updatePlot(value, estPos);
+    pause(0.005);
 end
 
-function updatePlot(value)
+function updatePlot(value, estPos)
         plotestPos(value, estPos); 
         drawnow;
 end
@@ -150,7 +150,8 @@ end
 
 function plotestPos(value, estPos)
     plot(estPos(1,value), estPos(2,value), '.m', 'LineWidth', 1.5);
-   
+    xlim([-3, 3]);
+    ylim([0, 4.5]);
     xlabel('X (m)');
     ylabel('Y (m)');
     title('IMM Filtering');
