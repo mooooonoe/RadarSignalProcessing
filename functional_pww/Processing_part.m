@@ -2,7 +2,7 @@ clear;
 clc;
 close all;
 % load("X:\Personals\Subin_Moon\Radar\0_u_DopplerMapData\walk\walk_radarCube.mat");
-load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
+load("X:\Personals\Subin_Moon\Radar\0_data\cycle_moving_adc_raw_data.mat");
 
 %% parameters
 chirpsIdx=20;
@@ -87,7 +87,7 @@ RangeBinIdx = 22;
 scale_factor_2D_ram = 1.08;
 
 cnt = 0;
-for frame_number = 50:256
+for frame_number = 1:256
     cnt = cnt + 1;
     %% Reshape Data
     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);

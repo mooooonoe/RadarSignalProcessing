@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-load('x_radar_eight_walking.mat'); load('y_radar_eight_walking.mat');
+load('x_radar_cycle_moving.mat'); load('y_radar_cycle_moving.mat');
 t = linspace(0, 2*pi, length(x_radar));
 dt = t(2) - t(1);
 
@@ -103,16 +103,19 @@ title('True and Estimated Positions with IMM Filter');
 axis equal;
 legend;
 
-
-%% Micro doppler
-NChirp=128; NChan=4; NSample=256; Nframe = 256;   
-load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
-
-% RangeBinIdx = 22;
 % 
+% %% Micro doppler
+% NChirp=128; NChan=4; NSample=256; Nframe = 256;   
+% load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
 % 
-% for frame_number = 50:256
-%     cnt = cnt + 1;
+% head = 50;
+% tail = head + length(estPos);
+% 
+% cnt = 0; label_arr = zeros(1,length(estPos));
+% 
+% for frame_number = head : tail
+%     cnt = cnt+1;
+%     RangeBinIdx = estPos(2,frame_number);
 % 
 %     % Reshape Data
 %     [frameComplex_cell] = ReshapeData(NChirp, NChan, NSample, Nframe, adcRawData);    
@@ -128,6 +131,36 @@ load("X:\Personals\Subin_Moon\Radar\0_data\eight_walking_adc_raw_data.mat");
 %     [time_axis, micro_doppler_mti, micro_doppler] = microdoppler(NChirp, NChan, Nframe, RangeBinIdx, radarCubeData_mti_cell, radarCubeData_cell);
 % 
 % 
+%     %% Save sdb as an image with custom size
+%     figure('Position', [200, 100, 500, 400]);
+%     axes('Position', [0 0 1 1], 'Units', 'normalized');
+%     imagesc(time_axis, velocityAxis, sdb);
+%     axis off;
+%     colormap('gray');
+%     set(gca, 'LooseInset', get(gca, 'TightInset'));
+%     saveas(gca, 'sdb.jpeg');
+%     close(gcf);
+% 
+%     %% neural network
+%     im = imread("sdb.jpeg"); 
+%     im_gray = rgb2gray(im);  
+%     im_resized = imresize(im_gray, [227 227]);
+% 
+%     load('trainedNetwork.mat'); 
+% 
+%     X = single(im_resized);
+%     X = reshape(X, [227, 227, 1]); 
+% 
+%     scores = predict(trainedNetwork_2, X);
+% 
+%     [score, idx] = max(scores);
+%     if exist('classNames', 'var') == 0
+%         classNames = {'Drone', 'Cycle', 'Human'}; 
+%     end
+% 
+%     label = classNames{idx};
+% 
+%     label_arr(cnt) = label;
 % 
 % end
 
@@ -152,18 +185,18 @@ end
 
 
 function plotestPos(value, estPos)
-    plot(estPos(1,value), estPos(2,value), '.m', 'LineWidth', 3);
-    xlim([-3, 3]);
-    ylim([0, 4.5]);
+    plot(estPos(1,value), estPos(2,value), '.m','MarkerSize', 10, 'LineWidth', 5);
+    xlim([-3, 12]);
+    ylim([0, 15]);
     xlabel('X (m)');
     ylabel('Y (m)');
     title('IMM Filtering');
 end
 
 function plotsensorVal(value, x_radar_filtered, y_radar_filtered)
-    plot(x_radar_filtered(value), y_radar_filtered(value), '.c', 'LineWidth', 3);
-    xlim([-3, 3]);
-    ylim([0, 4.5]);
+    plot(x_radar_filtered(value), y_radar_filtered(value), '.c', 'MarkerSize', 10, 'LineWidth', 5);
+    xlim([-3, 12]);
+    ylim([0, 15]);
     xlabel('X (m)');
     ylabel('Y (m)');
     title('IMM Filtering');

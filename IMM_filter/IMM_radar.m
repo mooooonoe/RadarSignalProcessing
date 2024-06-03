@@ -1,6 +1,6 @@
 clear; clc; close all;
 
-load('x_radar_eight_walking.mat'); load('y_radar_eight_walking.mat');
+load('x_radar_cycle_moving.mat'); load('y_radar_cycle_moving.mat');
 t = linspace(0, 2*pi, length(x_radar));
 dt = t(2) - t(1);
 
