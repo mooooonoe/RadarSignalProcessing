@@ -56,7 +56,7 @@ for i = 2:numSteps
     estPos(:,i) = positionSelector * correct(cvekf, measPos(:,i));
 end
 hold on;
-plot(estPos(1,:), estPos(2,:), '-g', 'DisplayName', 'CV Low PN');
+plot(estPos(1,:), estPos(2,:), '-m', 'DisplayName', 'CV Low PN');
 title('True and Estimated Positions with CV Filter');
 axis equal;
 legend;
@@ -98,7 +98,7 @@ for i = 2:numSteps
     modelProbs(:,i) = imm.ModelProbabilities;
 end
 hold on;
-plot(estPos(1,:), estPos(2,:), '-m', 'DisplayName', 'IMM');
+plot(estPos(1,:), estPos(2,:), '-b', 'DisplayName', 'IMM');
 title('True and Estimated Positions with IMM Filter');
 axis equal;
 legend;
@@ -185,7 +185,7 @@ end
 
 
 function plotestPos(value, estPos)
-    plot(estPos(1,value), estPos(2,value), '.m','MarkerSize', 10, 'LineWidth', 5);
+    plot(estPos(1,value), estPos(2,value), '.b','MarkerSize', 10, 'LineWidth', 5);
     xlim([-3, 12]);
     ylim([0, 15]);
     xlabel('X (m)');
@@ -194,8 +194,8 @@ function plotestPos(value, estPos)
 end
 
 function plotsensorVal(value, x_radar_filtered, y_radar_filtered)
-    plot(x_radar_filtered(value), y_radar_filtered(value), '.c', 'MarkerSize', 10, 'LineWidth', 5);
-    xlim([-3, 12]);
+    plot(x_radar_filtered(value), y_radar_filtered(value), '.r', 'MarkerSize', 10, 'LineWidth', 5);
+    xlim([-12, 12]);
     ylim([0, 15]);
     xlabel('X (m)');
     ylabel('Y (m)');
